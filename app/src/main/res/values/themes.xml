@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-
+    <!-- Tema é controlado via Compose; este style apenas satisfaz o Manifest -->
     <style name="Theme.Barbershop" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>
