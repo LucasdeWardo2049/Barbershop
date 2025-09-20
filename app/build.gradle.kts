@@ -40,6 +40,8 @@ android {
 }
 
 dependencies {
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
     // Compose BOM
     implementation(platform("androidx.compose:compose-bom:2024.10.01"))
 

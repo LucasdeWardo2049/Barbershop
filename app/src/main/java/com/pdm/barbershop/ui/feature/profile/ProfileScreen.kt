@@ -1,5 +1,8 @@
 package com.pdm.barbershop.ui.feature.profile
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.pdm.barbershop.ui.theme.BarbershopTheme
 
 @Composable
@@ -38,6 +42,13 @@ fun ProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    // Launcher para buscar uma imagem da galeria
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        viewModel.onProfileImageChanged(uri)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -48,7 +59,11 @@ fun ProfileScreen(
         ProfileHeader(
             userName = uiState.userName,
             userEmail = uiState.userEmail,
-            onImageClick = { /* TODO: Implementar lógica para escolher imagem */ }
+            profileImageUri = uiState.profileImageUri,
+            onImageClick = {
+                // Lança o seletor de imagens
+                imagePickerLauncher.launch("image/*")
+            }
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -61,29 +76,13 @@ fun ProfileScreen(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column {
-                ProfileMenuItem(
-                    icon = Icons.Default.Edit,
-                    text = "Alterar Dados Pessoais",
-                    onClick = onEditProfileClick
-                )
+                ProfileMenuItem(icon = Icons.Default.Edit, text = "Alterar Dados Pessoais", onClick = onEditProfileClick)
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
-                ProfileMenuItem(
-                    icon = Icons.Default.DateRange,
-                    text = "Meus Agendamentos",
-                    onClick = onAppointmentsClick
-                )
+                ProfileMenuItem(icon = Icons.Default.DateRange, text = "Meus Agendamentos", onClick = onAppointmentsClick)
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
-                ProfileMenuItem(
-                    icon = Icons.Default.History,
-                    text = "Histórico de Comandas",
-                    onClick = onComandasClick
-                )
+                ProfileMenuItem(icon = Icons.Default.History, text = "Histórico de Comandas", onClick = onComandasClick)
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
-                ProfileMenuItem(
-                    icon = Icons.Default.Notifications,
-                    text = "Notificações",
-                    onClick = onNotificationsClick
-                )
+                ProfileMenuItem(icon = Icons.Default.Notifications, text = "Notificações", onClick = onNotificationsClick)
             }
         }
 
@@ -97,47 +96,53 @@ fun ProfileScreen(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column {
-                ProfileMenuItem(
-                    icon = Icons.Default.HelpOutline,
-                    text = "Ajuda e Suporte",
-                    onClick = onHelpClick
-                )
+                ProfileMenuItem(icon = Icons.Default.HelpOutline, text = "Ajuda e Suporte", onClick = onHelpClick)
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
-                ProfileMenuItem(
-                    icon = Icons.Default.Info,
-                    text = "Sobre o App",
-                    onClick = onAboutClick
-                )
+                ProfileMenuItem(icon = Icons.Default.Info, text = "Sobre o App", onClick = onAboutClick)
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
-                ProfileMenuItem(
-                    icon = Icons.AutoMirrored.Filled.ExitToApp,
-                    text = "Sair",
-                    isLogout = true,
-                    onClick = { viewModel.logout() }
-                )
+                ProfileMenuItem(icon = Icons.AutoMirrored.Filled.ExitToApp, text = "Sair", isLogout = true, onClick = { viewModel.logout() })
             }
         }
     }
 }
 
 @Composable
-fun ProfileHeader(userName: String, userEmail: String, onImageClick: () -> Unit) {
+fun ProfileHeader(
+    userName: String,
+    userEmail: String,
+    profileImageUri: Uri?, // Recebe a URI da imagem
+    onImageClick: () -> Unit
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Box(contentAlignment = Alignment.BottomEnd) {
-            Image(
-                imageVector = Icons.Default.AccountCircle,
-                contentDescription = "Foto do Perfil",
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                    .clickable { onImageClick() },
-                contentScale = ContentScale.Crop
-            )
+            // Se a URI existir, mostra a imagem selecionada. Senão, mostra o ícone padrão.
+            if (profileImageUri != null) {
+                AsyncImage(
+                    model = profileImageUri,
+                    contentDescription = "Foto do Perfil",
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                        .clickable { onImageClick() },
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Image(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = "Foto do Perfil",
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .clickable { onImageClick() },
+                    contentScale = ContentScale.Crop
+                )
+            }
+
             Icon(
                 imageVector = Icons.Default.CameraAlt,
                 contentDescription = "Alterar foto",
@@ -146,6 +151,7 @@ fun ProfileHeader(userName: String, userEmail: String, onImageClick: () -> Unit)
                     .size(36.dp)
                     .background(MaterialTheme.colorScheme.primary, CircleShape)
                     .padding(6.dp)
+                    .clickable { onImageClick() }
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
