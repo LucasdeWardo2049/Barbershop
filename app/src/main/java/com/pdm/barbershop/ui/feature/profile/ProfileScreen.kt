@@ -2,30 +2,18 @@ package com.pdm.barbershop.ui.feature.profile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,15 +23,20 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pdm.barbershop.ui.theme.BarbershopTheme
 
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel = viewModel()) {
-    // Exemplo de dados do usuário (pode vir do ViewModel)
-    val userName = "Eduardo"
-    val userEmail = "eduardo.dev@example.com"
+fun ProfileScreen(
+    viewModel: ProfileViewModel = viewModel(),
+    onEditProfileClick: () -> Unit,
+    onAppointmentsClick: () -> Unit,
+    onComandasClick: () -> Unit,
+    onNotificationsClick: () -> Unit,
+    onHelpClick: () -> Unit,
+    onAboutClick: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -52,11 +45,16 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel()) {
             .padding(16.dp)
     ) {
         // Seção de Informações do Perfil
-        ProfileHeader(userName = userName, userEmail = userEmail)
+        ProfileHeader(
+            userName = uiState.userName,
+            userEmail = uiState.userEmail,
+            onImageClick = { /* TODO: Implementar lógica para escolher imagem */ }
+        )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Menu de Opções
+        // Menu de Opções da Conta
+        Text("Minha Conta", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -64,28 +62,58 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel()) {
         ) {
             Column {
                 ProfileMenuItem(
-                    icon = Icons.Default.DateRange,
-                    text = "Meus Agendamentos",
-                    onClick = { /* TODO: Navegar para a tela de agendamentos */ }
+                    icon = Icons.Default.Edit,
+                    text = "Alterar Dados Pessoais",
+                    onClick = onEditProfileClick
                 )
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
                 ProfileMenuItem(
-                    icon = Icons.Default.AccountCircle,
-                    text = "Meus Dados",
-                    onClick = { /* TODO: Navegar para a tela de dados do usuário */ }
+                    icon = Icons.Default.DateRange,
+                    text = "Meus Agendamentos",
+                    onClick = onAppointmentsClick
+                )
+                Divider(modifier = Modifier.padding(horizontal = 16.dp))
+                ProfileMenuItem(
+                    icon = Icons.Default.History,
+                    text = "Histórico de Comandas",
+                    onClick = onComandasClick
+                )
+                Divider(modifier = Modifier.padding(horizontal = 16.dp))
+                ProfileMenuItem(
+                    icon = Icons.Default.Notifications,
+                    text = "Notificações",
+                    onClick = onNotificationsClick
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Menu de Ajuda e Informações
+        Text("Ajuda & Informações", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column {
+                ProfileMenuItem(
+                    icon = Icons.Default.HelpOutline,
+                    text = "Ajuda e Suporte",
+                    onClick = onHelpClick
                 )
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
                 ProfileMenuItem(
                     icon = Icons.Default.Info,
                     text = "Sobre o App",
-                    onClick = { /* TODO: Navegar para a tela 'Sobre' */ }
+                    onClick = onAboutClick
                 )
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
                 ProfileMenuItem(
                     icon = Icons.AutoMirrored.Filled.ExitToApp,
                     text = "Sair",
                     isLogout = true,
-                    onClick = { /* TODO: Implementar lógica de logout */ }
+                    onClick = { viewModel.logout() }
                 )
             }
         }
@@ -93,21 +121,33 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel()) {
 }
 
 @Composable
-fun ProfileHeader(userName: String, userEmail: String) {
+fun ProfileHeader(userName: String, userEmail: String, onImageClick: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Placeholder para a imagem do perfil
-        Image(
-            imageVector = Icons.Default.AccountCircle,
-            contentDescription = "Foto do Perfil",
-            modifier = Modifier
-                .size(120.dp)
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop
-        )
+        Box(contentAlignment = Alignment.BottomEnd) {
+            Image(
+                imageVector = Icons.Default.AccountCircle,
+                contentDescription = "Foto do Perfil",
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    .clickable { onImageClick() },
+                contentScale = ContentScale.Crop
+            )
+            Icon(
+                imageVector = Icons.Default.CameraAlt,
+                contentDescription = "Alterar foto",
+                tint = Color.White,
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                    .padding(6.dp)
+            )
+        }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = userName,
@@ -167,8 +207,14 @@ fun ProfileMenuItem(
 @Preview(showBackground = true)
 @Composable
 fun ProfileScreenPreview() {
-    BarbershopTheme {
-        ProfileScreen()
+    BarbershopTheme(useDarkTheme = true) {
+        ProfileScreen(
+            onEditProfileClick = {},
+            onAppointmentsClick = {},
+            onComandasClick = {},
+            onNotificationsClick = {},
+            onHelpClick = {},
+            onAboutClick = {}
+        )
     }
 }
-
