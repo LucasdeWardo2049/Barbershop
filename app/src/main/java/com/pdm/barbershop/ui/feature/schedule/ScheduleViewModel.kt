@@ -48,9 +48,9 @@ class ScheduleViewModel : ViewModel() {
                 Service("3", "Sobrancelha", 20.0, 15, Icons.Default.Person)
             )
             val barbers = listOf(
-                Barber("1", "Renato Lima", "https://i.pravatar.cc/150?img=1"),
-                Barber("2", "Gabriel Becil", "https://i.pravatar.cc/150?img=3"),
-                Barber("3", "André Guedes", "https://i.pravatar.cc/150?img=5")
+                Barber("1", "Renato Lima", 4.5, "https://i.pravatar.cc/150?img=1"),
+                Barber("2", "Gabriel Becil", 4.7, "https://i.pravatar.cc/150?img=3"),
+                Barber("3", "André Guedes", 4.2, "https://i.pravatar.cc/150?img=5")
             )
             val dates = List(7) { LocalDate.now().plusDays(it.toLong()) }
 
