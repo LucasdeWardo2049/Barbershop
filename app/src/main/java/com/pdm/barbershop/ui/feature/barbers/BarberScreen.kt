@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person // Placeholder para foto
 import androidx.compose.material.icons.filled.Star // Para avaliação
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults // Adicionado import
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -46,20 +47,31 @@ fun BarbersScreen(viewModel: BarbersViewModel = viewModel()) {
     ) {
         Text("Barbeiros", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 16.dp))
 
-        // Controles de Ordenação
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            val isNameSelected = currentSortOrder == SortOrder.BY_NAME
             Button(
                 onClick = { viewModel.setSortOrder(SortOrder.BY_NAME) },
-                enabled = currentSortOrder != SortOrder.BY_NAME
+                modifier = Modifier.height(if (isNameSelected) 60.dp else 54.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isNameSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = if (isNameSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                )
             ) {
                 Text("Ordenar por Nome")
             }
+
+            val isRatingSelected = currentSortOrder == SortOrder.BY_RATING
             Button(
                 onClick = { viewModel.setSortOrder(SortOrder.BY_RATING) },
-                enabled = currentSortOrder != SortOrder.BY_RATING
+                modifier = Modifier.height(if (isRatingSelected) 60.dp else 54.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isRatingSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = if (isRatingSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                )
             ) {
                 Text("Ordenar por Avaliação")
             }
@@ -121,9 +133,7 @@ fun BarberItem(barber: Barber, modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun BarbersScreenPreview() {
-    // Você pode criar um ViewModel de preview aqui se quiser dados mais complexos no preview
-    // Por simplicidade, vamos usar o ViewModel padrão que tem dados de exemplo.
-    MaterialTheme { // Certifique-se de envolver com seu tema
+    MaterialTheme { 
         BarbersScreen(viewModel = BarbersViewModel())
     }
 }
