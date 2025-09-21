@@ -61,6 +61,8 @@ dependencies {
 
     // Optional: Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.firebase.crashlytics.buildtools)
 
     // Tooling
     debugImplementation("androidx.compose.ui:ui-tooling")
