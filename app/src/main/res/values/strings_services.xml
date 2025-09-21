@@ -1,0 +1,8 @@
+<resources>
+    <string name="services_title">Serviços</string>
+    <string name="products_title">Produtos</string>
+    <string name="services_tab_services">Serviços</string>
+    <string name="services_tab_products">Produtos</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="price_from">A partir de %1$s</string>
+</resources>
