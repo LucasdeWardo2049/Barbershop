@@ -1,5 +1,6 @@
 package com.pdm.barbershop.ui.feature.profile
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,6 +11,7 @@ import kotlinx.coroutines.launch
 data class ProfileUiState(
     val userName: String = "",
     val userEmail: String = "",
+    val profileImageUri: Uri? = null, // Novo: para guardar a URI da imagem
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -20,18 +22,13 @@ class ProfileViewModel : ViewModel() {
     val uiState: StateFlow<ProfileUiState> = _uiState
 
     init {
-        // Ao inicializar o ViewModel, busca os dados do usuário
         fetchUserData()
     }
 
     private fun fetchUserData() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-
-            // --- Lógica para buscar dados do usuário (ex: de uma API ou banco de dados) ---
-            // Por enquanto, usaremos dados de exemplo após um pequeno delay.
             kotlinx.coroutines.delay(1000)
-
             _uiState.value = _uiState.value.copy(
                 userName = "Eduardo",
                 userEmail = "eduardo.dev@example.com",
@@ -40,10 +37,13 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
-    // Função para fazer logout (exemplo)
+    // Novo: Função para atualizar a URI da imagem no estado
+    fun onProfileImageChanged(uri: Uri?) {
+        _uiState.value = _uiState.value.copy(profileImageUri = uri)
+        // TODO: Futuramente, aqui entrará a lógica para fazer o upload da imagem para o servidor
+    }
+
     fun logout() {
-        // --- Implementar a lógica de logout aqui ---
-        // Limpar tokens de autenticação, etc.
+        // Implementar a lógica de logout
     }
 }
-
