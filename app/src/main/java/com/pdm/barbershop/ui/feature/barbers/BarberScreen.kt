@@ -14,17 +14,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState // Adicionar este import
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person // Placeholder para foto
 import androidx.compose.material.icons.filled.Star // Para avaliação
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults // Adicionado import
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect // Adicionar este import
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -39,6 +41,13 @@ import com.pdm.barbershop.domain.model.Barber
 fun BarbersScreen(viewModel: BarbersViewModel = viewModel()) {
     val barbers by viewModel.barbers.collectAsState()
     val currentSortOrder by viewModel.sortOrder.collectAsState()
+    val lazyListState = rememberLazyListState() // 1. Criar LazyListState
+
+    LaunchedEffect(barbers) {
+        if (barbers.isNotEmpty()) { 
+            lazyListState.scrollToItem(index = 0) // Rolar para o topo
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -55,7 +64,7 @@ fun BarbersScreen(viewModel: BarbersViewModel = viewModel()) {
             val isNameSelected = currentSortOrder == SortOrder.BY_NAME
             Button(
                 onClick = { viewModel.setSortOrder(SortOrder.BY_NAME) },
-                modifier = Modifier.height(if (isNameSelected) 60.dp else 54.dp),
+                modifier = Modifier.height(if (isNameSelected) 62.dp else 54.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isNameSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = if (isNameSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
@@ -67,7 +76,7 @@ fun BarbersScreen(viewModel: BarbersViewModel = viewModel()) {
             val isRatingSelected = currentSortOrder == SortOrder.BY_RATING
             Button(
                 onClick = { viewModel.setSortOrder(SortOrder.BY_RATING) },
-                modifier = Modifier.height(if (isRatingSelected) 60.dp else 54.dp),
+                modifier = Modifier.height(if (isRatingSelected) 62.dp else 54.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isRatingSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = if (isRatingSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
@@ -77,12 +86,17 @@ fun BarbersScreen(viewModel: BarbersViewModel = viewModel()) {
             }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
         if (barbers.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("Nenhum barbeiro encontrado.")
             }
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyColumn(
+                state = lazyListState, // 2. Passar o estado para a LazyColumn
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 items(barbers, key = { barber -> barber.id }) { barber ->
                     BarberItem(barber = barber)
                 }
