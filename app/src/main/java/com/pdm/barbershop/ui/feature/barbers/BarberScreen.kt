@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState // Adicionar este import
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person // Placeholder para foto
 import androidx.compose.material.icons.filled.Star // Para avaliação
@@ -26,7 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect // Adicionar este import
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -41,11 +41,11 @@ import com.pdm.barbershop.domain.model.Barber
 fun BarbersScreen(viewModel: BarbersViewModel = viewModel()) {
     val barbers by viewModel.barbers.collectAsState()
     val currentSortOrder by viewModel.sortOrder.collectAsState()
-    val lazyListState = rememberLazyListState() // 1. Criar LazyListState
+    val lazyListState = rememberLazyListState()
 
     LaunchedEffect(barbers) {
         if (barbers.isNotEmpty()) { 
-            lazyListState.scrollToItem(index = 0) // Rolar para o topo
+            lazyListState.scrollToItem(index = 0)
         }
     }
 
@@ -62,12 +62,15 @@ fun BarbersScreen(viewModel: BarbersViewModel = viewModel()) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             val isNameSelected = currentSortOrder == SortOrder.BY_NAME
+            val selectedButtonContainerColor = Color(0xFFF3D9C9)
+            val selectedButtonContentColor = Color(0xFF1E3932)
+
             Button(
                 onClick = { viewModel.setSortOrder(SortOrder.BY_NAME) },
                 modifier = Modifier.height(if (isNameSelected) 62.dp else 54.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isNameSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = if (isNameSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                    containerColor = if (isNameSelected) selectedButtonContainerColor else MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = if (isNameSelected) selectedButtonContentColor else MaterialTheme.colorScheme.onSecondaryContainer
                 )
             ) {
                 Text("Ordenar por Nome")
@@ -78,8 +81,8 @@ fun BarbersScreen(viewModel: BarbersViewModel = viewModel()) {
                 onClick = { viewModel.setSortOrder(SortOrder.BY_RATING) },
                 modifier = Modifier.height(if (isRatingSelected) 62.dp else 54.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isRatingSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = if (isRatingSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                    containerColor = if (isRatingSelected) selectedButtonContainerColor else MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = if (isRatingSelected) selectedButtonContentColor else MaterialTheme.colorScheme.onSecondaryContainer
                 )
             ) {
                 Text("Ordenar por Avaliação")
@@ -94,7 +97,7 @@ fun BarbersScreen(viewModel: BarbersViewModel = viewModel()) {
             }
         } else {
             LazyColumn(
-                state = lazyListState, // 2. Passar o estado para a LazyColumn
+                state = lazyListState,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(barbers, key = { barber -> barber.id }) { barber ->
