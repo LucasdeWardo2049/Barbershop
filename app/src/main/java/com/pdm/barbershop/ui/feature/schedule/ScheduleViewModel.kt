@@ -49,7 +49,7 @@ class ScheduleViewModel : ViewModel() {
             )
             val barbers = listOf(
                 Barber("1", "Renato Lima", "https://i.pravatar.cc/150?img=1"),
-                Barber("2", "Gabriel Becil", "https://i.pravatar.cc/150?img=3"),
+                Barber("2", "Gabriel", "https://i.pravatar.cc/150?img=3"),
                 Barber("3", "André Guedes", "https://i.pravatar.cc/150?img=5")
             )
             val dates = List(7) { LocalDate.now().plusDays(it.toLong()) }
