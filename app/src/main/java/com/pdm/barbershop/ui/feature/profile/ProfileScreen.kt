@@ -8,7 +8,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -49,10 +51,13 @@ fun ProfileScreen(
         viewModel.onProfileImageChanged(uri)
     }
 
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(scrollState) // ✅ habilita rolagem vertical
             .padding(16.dp)
     ) {
         // Seção de Informações do Perfil
@@ -69,38 +74,75 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         // Menu de Opções da Conta
-        Text("Minha Conta", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+        Text(
+            "Minha Conta",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column {
-                ProfileMenuItem(icon = Icons.Default.Edit, text = "Alterar Dados Pessoais", onClick = onEditProfileClick)
+                ProfileMenuItem(
+                    icon = Icons.Default.Edit,
+                    text = "Alterar Dados Pessoais",
+                    onClick = onEditProfileClick
+                )
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
-                ProfileMenuItem(icon = Icons.Default.DateRange, text = "Meus Agendamentos", onClick = onAppointmentsClick)
+                ProfileMenuItem(
+                    icon = Icons.Default.DateRange,
+                    text = "Meus Agendamentos",
+                    onClick = onAppointmentsClick
+                )
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
-                ProfileMenuItem(icon = Icons.Default.History, text = "Histórico de Comandas", onClick = onComandasClick)
+                ProfileMenuItem(
+                    icon = Icons.Default.History,
+                    text = "Histórico de Comandas",
+                    onClick = onComandasClick
+                )
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
-                ProfileMenuItem(icon = Icons.Default.Notifications, text = "Notificações", onClick = onNotificationsClick)
+                ProfileMenuItem(
+                    icon = Icons.Default.Notifications,
+                    text = "Notificações",
+                    onClick = onNotificationsClick
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         // Menu de Ajuda e Informações
-        Text("Ajuda & Informações", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+        Text(
+            "Ajuda & Informações",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column {
-                ProfileMenuItem(icon = Icons.Default.HelpOutline, text = "Ajuda e Suporte", onClick = onHelpClick)
+                ProfileMenuItem(
+                    icon = Icons.Default.HelpOutline,
+                    text = "Ajuda e Suporte",
+                    onClick = onHelpClick
+                )
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
-                ProfileMenuItem(icon = Icons.Default.Info, text = "Sobre o App", onClick = onAboutClick)
+                ProfileMenuItem(
+                    icon = Icons.Default.Info,
+                    text = "Sobre o App",
+                    onClick = onAboutClick
+                )
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
-                ProfileMenuItem(icon = Icons.AutoMirrored.Filled.ExitToApp, text = "Sair", isLogout = true, onClick = { viewModel.logout() })
+                ProfileMenuItem(
+                    icon = Icons.AutoMirrored.Filled.ExitToApp,
+                    text = "Sair",
+                    isLogout = true,
+                    onClick = { viewModel.logout() }
+                )
             }
         }
     }
@@ -119,7 +161,6 @@ fun ProfileHeader(
         verticalArrangement = Arrangement.Center
     ) {
         Box(contentAlignment = Alignment.BottomEnd) {
-            // Se a URI existir, mostra a imagem selecionada. Senão, mostra o ícone padrão.
             if (profileImageUri != null) {
                 AsyncImage(
                     model = profileImageUri,
@@ -177,7 +218,8 @@ fun ProfileMenuItem(
     isLogout: Boolean = false,
     onClick: () -> Unit
 ) {
-    val textColor = if (isLogout) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+    val textColor =
+        if (isLogout) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
 
     Row(
         modifier = Modifier

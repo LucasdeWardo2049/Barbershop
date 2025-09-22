@@ -3,7 +3,10 @@ package com.pdm.barbershop.ui.feature.schedule
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -44,7 +47,7 @@ fun ScheduleScreen(
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        // Passo 1: Seleção de Serviço
+        // Passo 1: Serviço
         SchedulingStep(title = "1. Escolha o serviço") {
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -60,8 +63,12 @@ fun ScheduleScreen(
             }
         }
 
-        // Passo 2: Seleção de Barbeiro
-        AnimatedVisibility(visible = uiState.selectedService != null) {
+        // Passo 2: Barbeiro
+        AnimatedVisibility(
+            visible = uiState.selectedService != null,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
             SchedulingStep(title = "2. Escolha o profissional") {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -79,10 +86,14 @@ fun ScheduleScreen(
             }
         }
 
-        // Passo 3: Seleção de Data e Hora
-        AnimatedVisibility(visible = uiState.selectedBarber != null) {
+        // Passo 3: Data e Horário
+        AnimatedVisibility(
+            visible = uiState.selectedBarber != null,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
             SchedulingStep(title = "3. Escolha a data e o horário") {
-                // Seleção de Data
+                // Datas
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(vertical = 8.dp)
@@ -96,11 +107,18 @@ fun ScheduleScreen(
                     }
                 }
 
-                // Carregamento e Seleção de Horários
-                if (uiState.isLoadingTimeSlots) {
-                    CircularProgressIndicator(modifier = Modifier.padding(16.dp))
-                } else if (uiState.selectedDate != null) {
-                    if (uiState.availableTimeSlots.isNotEmpty()) {
+                // Horários
+                when {
+                    uiState.isLoadingTimeSlots -> {
+                        CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                    }
+                    uiState.selectedDate != null && uiState.availableTimeSlots.isEmpty() -> {
+                        Text(
+                            "Nenhum horário disponível para esta data.",
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                    uiState.availableTimeSlots.isNotEmpty() -> {
                         LazyVerticalGrid(
                             columns = GridCells.Adaptive(minSize = 80.dp),
                             modifier = Modifier
@@ -117,11 +135,6 @@ fun ScheduleScreen(
                                 )
                             }
                         }
-                    } else {
-                        Text(
-                            "Nenhum horário disponível para esta data.",
-                            modifier = Modifier.padding(16.dp)
-                        )
                     }
                 }
             }
@@ -129,8 +142,12 @@ fun ScheduleScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Card de Resumo
-        AnimatedVisibility(visible = uiState.isConfirmationButtonEnabled) {
+        // Resumo
+        AnimatedVisibility(
+            visible = uiState.isConfirmationButtonEnabled,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
             AppointmentSummaryCard(uiState = uiState)
         }
 
@@ -138,11 +155,14 @@ fun ScheduleScreen(
 
         // Botão de confirmação
         Button(
-            onClick = { /* TODO: Implementar a confirmação */ },
+            onClick = { /* TODO: Confirmar agendamento */ },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            enabled = uiState.isConfirmationButtonEnabled
+            enabled = uiState.isConfirmationButtonEnabled,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            )
         ) {
             Text("Confirmar Agendamento", fontSize = 16.sp)
         }
@@ -151,53 +171,22 @@ fun ScheduleScreen(
 
 @Composable
 fun TimeSlotChip(time: String, isSelected: Boolean, onTimeSelected: () -> Unit) {
-    AssistChip(
-        onClick = onTimeSelected,
-        label = { Text(time) },
-        colors = AssistChipDefaults.assistChipColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-            labelColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-        ),
-        shape = RoundedCornerShape(12.dp)
+    BaseChip(
+        label = time,
+        isSelected = isSelected,
+        onClick = onTimeSelected
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DateChip(date: LocalDate, isSelected: Boolean, onDateSelected: () -> Unit) {
     val formatter = DateTimeFormatter.ofPattern("dd/MM")
-    AssistChip(
-        onClick = onDateSelected,
-        label = { Text(date.format(formatter)) },
-        colors = AssistChipDefaults.assistChipColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-            labelColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-        ),
-        shape = RoundedCornerShape(12.dp)
+    BaseChip(
+        label = date.format(formatter),
+        isSelected = isSelected,
+        onClick = onDateSelected
     )
-}
-
-@Composable
-fun BarberItem(barber: Barber, isSelected: Boolean, onBarberSelected: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .width(120.dp)
-            .height(140.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
-        ),
-        onClick = onBarberSelected
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(barber.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-        }
-    }
 }
 
 @Composable
@@ -212,6 +201,41 @@ fun ServiceChip(service: Service, isSelected: Boolean, onServiceSelected: () -> 
         ),
         shape = RoundedCornerShape(12.dp)
     )
+}
+
+@Composable
+fun BaseChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
+    AssistChip(
+        onClick = onClick,
+        label = { Text(label) },
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+            labelColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+        ),
+        shape = RoundedCornerShape(12.dp)
+    )
+}
+
+@Composable
+fun BarberItem(barber: Barber, isSelected: Boolean, onBarberSelected: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .width(120.dp)
+            .height(140.dp)
+            .clickable { onBarberSelected() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            Text(
+                barber.name,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
 }
 
 @Composable
@@ -237,7 +261,7 @@ fun SchedulingStep(title: String, content: @Composable () -> Unit) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppointmentSummaryCard(uiState: ScheduleUiState) {
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.getDefault())
     val dateFormatter = DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale("pt", "BR"))
 
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {

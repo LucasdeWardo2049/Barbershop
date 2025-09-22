@@ -71,7 +71,6 @@ fun AppNavHost(
             ComandaHistoryScreen(onBackClick = { navController.popBackStack() })
         }
 
-        // Novas telas
         composable(AppDestination.Notifications.route) {
             NotificationsScreen(onBackClick = { navController.popBackStack() })
         }
