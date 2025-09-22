@@ -1,5 +1,7 @@
 package com.pdm.barbershop.navegation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -17,6 +19,7 @@ import com.pdm.barbershop.ui.feature.profile.ProfileScreen
 import com.pdm.barbershop.ui.feature.schedule.ScheduleScreen
 import com.pdm.barbershop.ui.feature.services.ServicesScreen
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavHost(
     navController: NavHostController,
@@ -57,7 +60,6 @@ fun AppNavHost(
             ComandaHistoryScreen(onBackClick = { navController.popBackStack() })
         }
 
-        // Novas telas
         composable(AppDestination.Notifications.route) {
             NotificationsScreen(onBackClick = { navController.popBackStack() })
         }

@@ -21,8 +21,6 @@ sealed class AppDestination(
     data object EditProfile : AppDestination("edit_profile", R.string.nav_edit_profile, Icons.Default.Edit, "Editar Perfil")
     data object Appointments : AppDestination("appointments", R.string.nav_appointments, Icons.Outlined.DateRange, "Meus Agendamentos")
     data object ComandaHistory : AppDestination("comanda_history", R.string.nav_comanda_history, Icons.Outlined.ReceiptLong, "Histórico de Comandas")
-
-    // Novas rotas adicionadas
     data object Notifications : AppDestination("notifications", R.string.nav_notifications, Icons.Outlined.Notifications, "Notificações")
     data object Help : AppDestination("help", R.string.nav_help, Icons.Outlined.HelpOutline, "Ajuda e Suporte")
     data object About : AppDestination("about", R.string.nav_about, Icons.Outlined.Info, "Sobre o App")
