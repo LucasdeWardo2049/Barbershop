@@ -1,10 +1,16 @@
 <resources>
     <string name="app_name">Barbershop</string>
 
-    <!-- Labels da BottomBar -->
     <string name="nav_home">Início</string>
     <string name="nav_services">Serviços</string>
     <string name="nav_barbers">Barbeiros</string>
     <string name="nav_schedule">Agenda</string>
     <string name="nav_profile">Perfil</string>
+    <string name="nav_edit_profile">Editar Perfil</string>
+    <string name="nav_appointments">Meus Agendamentos</string>
+    <string name="nav_comanda_history">Histórico de Comandas</string>
+    <string name="nav_notifications">Notificações</string>
+    <string name="nav_help">Ajuda e Suporte</string>
+    <string name="nav_about">Sobre o App</string>
+
 </resources>

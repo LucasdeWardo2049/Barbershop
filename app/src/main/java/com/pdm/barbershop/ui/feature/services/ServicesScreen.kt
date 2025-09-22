@@ -1,17 +1,79 @@
 package com.pdm.barbershop.ui.feature.services
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.pdm.barbershop.domain.model.CatalogItem
+import com.pdm.barbershop.ui.feature.services.components.ServiceCard
+import com.pdm.barbershop.ui.feature.services.components.ServicesSegmentedControl
 
 @Composable
-fun ServicesScreen(viewModel: ServicesViewModel = viewModel()) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Serviços", style = MaterialTheme.typography.headlineMedium)
+fun ServicesScreen(
+    viewModel: ServicesViewModel = viewModel()
+) {
+    val state by viewModel.state
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Segmented buttons fixos no topo
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            ServicesSegmentedControl(
+                selectedTab = state.selectedTab,
+                onSelect = viewModel::onTabSelected
+            )
+        }
+
+        // Conteúdo
+        when {
+            state.isLoading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+            state.error != null -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = state.error ?: "Erro",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+            else -> {
+                val list: List<CatalogItem> = when (state.selectedTab) {
+                    ServicesTab.Services -> state.services
+                    ServicesTab.Products -> state.products
+                }
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 64.dp), // espaço abaixo do segmented
+                    contentPadding = PaddingValues(16.dp)
+                ) {
+                    items(items = list, key = { it.id }) { item ->
+                        ServiceCard(
+                            item = item,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
