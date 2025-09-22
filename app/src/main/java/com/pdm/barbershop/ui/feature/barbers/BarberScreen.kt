@@ -54,7 +54,6 @@ fun BarbersScreen(viewModel: BarbersViewModel = viewModel()) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("Barbeiros", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 16.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
