@@ -7,11 +7,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-// Data class para representar o estado da UI de perfil
 data class ProfileUiState(
     val userName: String = "",
     val userEmail: String = "",
-    val profileImageUri: Uri? = null, // Novo: para guardar a URI da imagem
+    val profileImageUri: Uri? = null,
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -37,13 +36,15 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
-    // Novo: Função para atualizar a URI da imagem no estado
     fun onProfileImageChanged(uri: Uri?) {
         _uiState.value = _uiState.value.copy(profileImageUri = uri)
-        // TODO: Futuramente, aqui entrará a lógica para fazer o upload da imagem para o servidor
+        // TODO: Implementar upload da imagem para o servidor futuramente
     }
 
     fun logout() {
-        // Implementar a lógica de logout
+        viewModelScope.launch {
+            // TODO: Limpar sessão, tokens, etc.
+            _uiState.value = ProfileUiState() // Reseta estado
+        }
     }
 }
