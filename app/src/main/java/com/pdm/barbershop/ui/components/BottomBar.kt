@@ -35,7 +35,9 @@ fun CustomBottomBar(
     Surface(
         color = Color(0xFF1E3932), // Cor de fundo da barra (dark_green)
         tonalElevation = 8.dp,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding() // <<< ADICIONADO AQUI
     ) {
         Row(
             modifier = Modifier

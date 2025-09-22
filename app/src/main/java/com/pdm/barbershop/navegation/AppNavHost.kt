@@ -1,5 +1,7 @@
 package com.pdm.barbershop.navegation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -10,13 +12,14 @@ import com.pdm.barbershop.ui.feature.appointments.AppointmentsScreen
 import com.pdm.barbershop.ui.feature.barbers.BarbersScreen
 import com.pdm.barbershop.ui.feature.comanda.ComandaHistoryScreen
 import com.pdm.barbershop.ui.feature.help.HelpScreen
-import com.pdm.barbershop.ui.feature.home.HomeScreen
+import com.pdm.barbershop.ui.feature.home.HomeScreen // Import da HomeScreen
 import com.pdm.barbershop.ui.feature.notifications.NotificationsScreen
 import com.pdm.barbershop.ui.feature.profile.EditProfileScreen
 import com.pdm.barbershop.ui.feature.profile.ProfileScreen
 import com.pdm.barbershop.ui.feature.schedule.ScheduleScreen
 import com.pdm.barbershop.ui.feature.services.ServicesScreen
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavHost(
     navController: NavHostController,
@@ -28,7 +31,18 @@ fun AppNavHost(
         startDestination = startDestination,
         modifier = modifier
     ) {
-        composable(AppDestination.Home.route) { HomeScreen() }
+        composable(AppDestination.Home.route) {
+            HomeScreen(
+                onNavigateToSchedule = { navController.navigate(AppDestination.Schedule.route) },
+                onNavigateToServices = { navController.navigate(AppDestination.Services.route) },
+                onNavigateToBarbers = { navController.navigate(AppDestination.Barbers.route) },
+                onNavigateToAppointmentDetails = { appointmentId ->
+                    // No futuro, você pode querer uma tela de detalhes específica.
+                    // Por agora, navega para a lista geral de agendamentos.
+                    navController.navigate(AppDestination.Appointments.route)
+                }
+            )
+        }
         composable(AppDestination.Services.route) { ServicesScreen() }
         composable(AppDestination.Barbers.route) { BarbersScreen() }
         composable(AppDestination.Schedule.route) { ScheduleScreen() }
@@ -69,4 +83,3 @@ fun AppNavHost(
         }
     }
 }
-
