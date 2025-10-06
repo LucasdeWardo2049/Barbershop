@@ -23,40 +23,51 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.pdm.barbershop.navegation.AppDestination
+import com.pdm.barbershop.navegation.Route
 
 @Composable
 fun CustomBottomBar(
     navController: NavHostController
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val currentRouteName = navBackStackEntry?.destination?.route
     val destinations = AppDestination.bottom
 
     Surface(
-        color = Color(0xFF1E3932), // Cor de fundo da barra (dark_green)
+        color = Color(0xFF1E3932),
         tonalElevation = 8.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .navigationBarsPadding() // <<< ADICIONADO AQUI
+            .navigationBarsPadding()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp) // Um pouco mais alto para um visual premium
+                .height(80.dp)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
             destinations.forEach { destination ->
+                val isSelected = when (destination) {
+                    AppDestination.Home -> currentRouteName == Route.Home::class.qualifiedName
+                    AppDestination.Services -> currentRouteName == Route.Services::class.qualifiedName
+                    AppDestination.Barbers -> currentRouteName == Route.Barbers::class.qualifiedName
+                    AppDestination.Schedule -> currentRouteName == Route.Schedule::class.qualifiedName
+                    AppDestination.Profile -> currentRouteName == Route.Profile::class.qualifiedName
+                    else -> false
+                }
                 BottomBarItem(
                     destination = destination,
-                    isSelected = currentRoute == destination.route,
+                    isSelected = isSelected,
                     onClick = {
-                        if (currentRoute != destination.route) {
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.startDestinationId)
-                                launchSingleTop = true
-                            }
+                        when (destination) {
+                            AppDestination.Home -> navController.navigate(Route.Home)
+                            AppDestination.Services -> navController.navigate(Route.Services())
+                            AppDestination.Barbers -> navController.navigate(Route.Barbers)
+                            AppDestination.Schedule -> navController.navigate(Route.Schedule)
+                            AppDestination.Profile -> navController.navigate(Route.Profile)
+                            else -> {}
                         }
                     }
                 )
@@ -73,13 +84,12 @@ fun BottomBarItem(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
-    // Animação de cores para o card e para o conteúdo (ícone e texto)
     val cardColor by animateColorAsState(
-        targetValue = if (isSelected) Color(0xFF385D51) else Color.Transparent, // medium_green para selecionado
+        targetValue = if (isSelected) Color(0xFF385D51) else Color.Transparent,
         animationSpec = tween(300)
     )
     val contentColor by animateColorAsState(
-        targetValue = if (isSelected) Color(0xFFF3D9C9) else Color(0xFFE6A685), // light_peach para selecionado, dark_peach para não selecionado
+        targetValue = if (isSelected) Color(0xFFF3D9C9) else Color(0xFFE6A685),
         animationSpec = tween(300)
     )
 
@@ -89,7 +99,7 @@ fun BottomBarItem(
             .background(cardColor)
             .clickable(
                 interactionSource = interactionSource,
-                indication = null, // Remove o efeito de ripple padrão
+                indication = null,
                 onClick = onClick
             )
             .padding(horizontal = 8.dp, vertical = 10.dp),

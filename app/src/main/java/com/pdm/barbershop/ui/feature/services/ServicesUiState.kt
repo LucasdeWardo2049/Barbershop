@@ -1,7 +1,9 @@
 package com.pdm.barbershop.ui.feature.services
 
 import com.pdm.barbershop.domain.model.CatalogItem
+import kotlinx.serialization.Serializable
 
+@Serializable
 enum class ServicesTab { Services, Products }
 
 data class ServicesUiState(
@@ -11,4 +13,3 @@ data class ServicesUiState(
     val products: List<CatalogItem> = emptyList(),
     val error: String? = null
 )
-

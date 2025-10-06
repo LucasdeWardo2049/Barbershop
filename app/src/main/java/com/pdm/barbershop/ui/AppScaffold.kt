@@ -14,6 +14,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.pdm.barbershop.navegation.AppDestination
 import com.pdm.barbershop.navegation.AppNavHost
+import com.pdm.barbershop.navegation.Route
 import com.pdm.barbershop.ui.components.CustomBottomBar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,10 +22,24 @@ import com.pdm.barbershop.ui.components.CustomBottomBar
 fun AppScaffold() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route
-    val currentDestination = AppDestination.fromRoute(currentRoute)
+    val currentRouteName = backStackEntry?.destination?.route
 
-    // NOVO: Lógica para decidir quando exibir as barras de navegação
+    // Map current typed route to an AppDestination to keep labels/titles
+    val currentDestination = when (currentRouteName) {
+        Route.Home::class.qualifiedName -> AppDestination.Home
+        Route.Services::class.qualifiedName -> AppDestination.Services
+        Route.Barbers::class.qualifiedName -> AppDestination.Barbers
+        Route.Schedule::class.qualifiedName -> AppDestination.Schedule
+        Route.Profile::class.qualifiedName -> AppDestination.Profile
+        Route.EditProfile::class.qualifiedName -> AppDestination.EditProfile
+        Route.Appointments::class.qualifiedName -> AppDestination.Appointments
+        Route.ComandaHistory::class.qualifiedName -> AppDestination.ComandaHistory
+        Route.Notifications::class.qualifiedName -> AppDestination.Notifications
+        Route.Help::class.qualifiedName -> AppDestination.Help
+        Route.About::class.qualifiedName -> AppDestination.About
+        else -> null
+    }
+
     val shouldShowBars = currentDestination in AppDestination.bottom
 
     Scaffold(
