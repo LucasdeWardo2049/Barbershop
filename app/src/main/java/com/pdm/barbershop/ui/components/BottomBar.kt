@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.pdm.barbershop.navegation.AppDestination
@@ -30,8 +31,14 @@ fun CustomBottomBar(
     navController: NavHostController
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRouteName = navBackStackEntry?.destination?.route
+    val currentDest = navBackStackEntry?.destination
     val destinations = AppDestination.bottom
+
+    val home = Route.Home::class.qualifiedName
+    val services = Route.Services::class.qualifiedName
+    val barbers = Route.Barbers::class.qualifiedName
+    val schedule = Route.Schedule::class.qualifiedName
+    val profile = Route.Profile::class.qualifiedName
 
     Surface(
         color = Color(0xFF1E3932),
@@ -50,11 +57,11 @@ fun CustomBottomBar(
         ) {
             destinations.forEach { destination ->
                 val isSelected = when (destination) {
-                    AppDestination.Home -> currentRouteName == Route.Home::class.qualifiedName
-                    AppDestination.Services -> currentRouteName == Route.Services::class.qualifiedName
-                    AppDestination.Barbers -> currentRouteName == Route.Barbers::class.qualifiedName
-                    AppDestination.Schedule -> currentRouteName == Route.Schedule::class.qualifiedName
-                    AppDestination.Profile -> currentRouteName == Route.Profile::class.qualifiedName
+                    AppDestination.Home -> currentDest?.hierarchy?.any { it.route == home } == true
+                    AppDestination.Services -> currentDest?.hierarchy?.any { it.route == services } == true
+                    AppDestination.Barbers -> currentDest?.hierarchy?.any { it.route == barbers } == true
+                    AppDestination.Schedule -> currentDest?.hierarchy?.any { it.route == schedule } == true
+                    AppDestination.Profile -> currentDest?.hierarchy?.any { it.route == profile } == true
                     else -> false
                 }
                 BottomBarItem(
@@ -62,11 +69,31 @@ fun CustomBottomBar(
                     isSelected = isSelected,
                     onClick = {
                         when (destination) {
-                            AppDestination.Home -> navController.navigate(Route.Home)
-                            AppDestination.Services -> navController.navigate(Route.Services())
-                            AppDestination.Barbers -> navController.navigate(Route.Barbers)
-                            AppDestination.Schedule -> navController.navigate(Route.Schedule)
-                            AppDestination.Profile -> navController.navigate(Route.Profile)
+                            AppDestination.Home -> navController.navigate(Route.Home) {
+                                popUpTo(Route.Home) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                            AppDestination.Services -> navController.navigate(Route.Services()) {
+                                popUpTo(Route.Home) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                            AppDestination.Barbers -> navController.navigate(Route.Barbers) {
+                                popUpTo(Route.Home) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                            AppDestination.Schedule -> navController.navigate(Route.Schedule) {
+                                popUpTo(Route.Home) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                            AppDestination.Profile -> navController.navigate(Route.Profile) {
+                                popUpTo(Route.Home) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                             else -> {}
                         }
                     }

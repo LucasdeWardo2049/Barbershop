@@ -2,16 +2,17 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlinx.serialization)
 }
 
 android {
     namespace = "com.pdm.barbershop"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.pdm.barbershop"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -40,31 +41,33 @@ android {
 }
 
 dependencies {
-    implementation("io.coil-kt:coil-compose:2.6.0")
-
     // Compose BOM
-    implementation(platform("androidx.compose:compose-bom:2024.10.01"))
+    implementation(platform(libs.androidx.compose.bom))
 
-    // Material 3
-    implementation("androidx.compose.material3:material3")
+    // Core UI
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    implementation(libs.androidx.compose.ui.graphics)
 
-    // Ícones Material
-    implementation("androidx.compose.material:material-icons-extended")
+    // Navigation (typed routes)
+    implementation(libs.androidx.navigation.compose)
 
-    // Navigation Compose
-    implementation("androidx.navigation:navigation-compose:2.8.0")
+    // Kotlinx Serialization JSON for typed routes args
+    implementation(libs.kotlinx.serialization.json)
 
-    // Activity/Runtime Compose
-    implementation("androidx.activity:activity-compose:1.9.2")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
+    // Activity/Runtime Compose & Lifecycle
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
-    // Optional: Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-    implementation(libs.androidx.ui.graphics)
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
+
+    // Images
+    implementation(libs.coil.compose)
+
+    // Tooling/Buildtools
     implementation(libs.firebase.crashlytics.buildtools)
-
-    // Tooling
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    implementation("androidx.compose.ui:ui-tooling-preview")
 }
