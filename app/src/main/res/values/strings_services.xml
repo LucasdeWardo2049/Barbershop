@@ -5,4 +5,12 @@
     <string name="services_tab_products">Produtos</string>
     <string name="duration_minutes">%1$d min</string>
     <string name="price_from">A partir de %1$s</string>
+
+    <!-- Accessibility -->
+    <string name="a11y_card_item_full">%1$s, preço %2$s, duração %3$d minutos</string>
+    <string name="a11y_card_item_no_duration">%1$s, preço %2$s</string>
+    <string name="a11y_service_icon">Serviço</string>
+    <string name="a11y_product_icon">Produto</string>
+    <string name="a11y_price">Preço %1$s</string>
+    <string name="a11y_duration">Duração %1$d minutos</string>
 </resources>

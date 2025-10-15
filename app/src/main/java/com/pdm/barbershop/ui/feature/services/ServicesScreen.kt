@@ -26,38 +26,37 @@ fun ServicesScreen(
     val state by viewModel.state
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Segmented buttons fixos no topo
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            ServicesSegmentedControl(
-                selectedTab = state.selectedTab,
-                onSelect = viewModel::onTabSelected
-            )
-        }
-
-        // Conteúdo
-        when {
-            state.isLoading -> {
+        when (val s = state) {
+            is ServicesUiState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
             }
-            state.error != null -> {
+            is ServicesUiState.Error -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = state.error ?: "Erro",
+                        text = s.message,
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.error
                     )
                 }
             }
-            else -> {
-                val list: List<CatalogItem> = when (state.selectedTab) {
-                    ServicesTab.Services -> state.services
-                    ServicesTab.Products -> state.products
+            is ServicesUiState.Content -> {
+                // Segmented buttons no topo
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    ServicesSegmentedControl(
+                        selectedTab = s.selectedTab,
+                        onSelect = viewModel::onTabSelected
+                    )
+                }
+
+                val list: List<CatalogItem> = when (s.selectedTab) {
+                    ServicesTab.Services -> s.services
+                    ServicesTab.Products -> s.products
                 }
 
                 LazyColumn(
