@@ -1,7 +1,5 @@
 package com.pdm.barbershop.ui.feature.schedule
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Face
@@ -31,7 +29,6 @@ data class ScheduleUiState(
     val isLoadingTimeSlots: Boolean = false
 )
 
-@RequiresApi(Build.VERSION_CODES.O)
 class ScheduleViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(ScheduleUiState())
     val uiState = _uiState.asStateFlow()

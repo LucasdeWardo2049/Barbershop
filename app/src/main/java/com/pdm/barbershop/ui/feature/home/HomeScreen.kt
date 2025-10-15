@@ -26,7 +26,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pdm.barbershop.domain.model.Appointment
 import com.pdm.barbershop.domain.model.Service
@@ -46,8 +46,25 @@ fun HomeScreen(
     onNavigateToBarbers: () -> Unit = {},
     onNavigateToAppointmentDetails: (String) -> Unit = {}
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    HomeContent(
+        uiState = uiState,
+        onNavigateToSchedule = onNavigateToSchedule,
+        onNavigateToServices = onNavigateToServices,
+        onNavigateToBarbers = onNavigateToBarbers,
+        onNavigateToAppointmentDetails = onNavigateToAppointmentDetails
+    )
+}
+
+@Composable
+private fun HomeContent(
+    uiState: HomeUiState,
+    onNavigateToSchedule: () -> Unit,
+    onNavigateToServices: () -> Unit,
+    onNavigateToBarbers: () -> Unit,
+    onNavigateToAppointmentDetails: (String) -> Unit
+) {
     if (uiState.isLoading) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -60,7 +77,7 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()) // Para permitir rolagem se o conteúdo for grande
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
             // 1. Saudação
@@ -72,10 +89,7 @@ fun HomeScreen(
             uiState.nextAppointment?.let { appointment ->
                 NextAppointmentCard(
                     appointment = appointment,
-                    onSeeDetailsClicked = { 
-                        // viewModel.onSeeDetailsClicked(appointment.id) 
-                        onNavigateToAppointmentDetails(appointment.id)
-                    }
+                    onSeeDetailsClicked = { onNavigateToAppointmentDetails(appointment.id) }
                 )
                 Spacer(modifier = Modifier.height(24.dp))
             }
@@ -93,10 +107,7 @@ fun HomeScreen(
             uiState.lastServiceForRebooking?.let { service ->
                 QuickRebookCard(
                     service = service,
-                    onRebookClicked = { 
-                        // viewModel.onRebookServiceClicked(service.id)
-                        onNavigateToSchedule() // Ou uma navegação específica para reagendamento com o ID do serviço
-                    }
+                    onRebookClicked = { onNavigateToSchedule() }
                 )
             }
         }
@@ -244,8 +255,20 @@ fun QuickRebookCard(service: Service, onRebookClicked: () -> Unit) {
 @Preview(showBackground = true, name = "HomeScreen Preview")
 @Composable
 fun HomeScreenPreview() {
+    val sampleState = HomeUiState(
+        userName = "Eduardo",
+        nextAppointment = Appointment("1", "24/09", "15:00", "Corte + Barba", "Fernando Silva", "Confirmado"),
+        lastServiceForRebooking = Service("s1", "Corte Masculino", 50.0, 45, Icons.Filled.ContentCut),
+        isLoading = false
+    )
     MaterialTheme {
-        HomeScreen(viewModel = HomeViewModel())
+        HomeContent(
+            uiState = sampleState,
+            onNavigateToSchedule = {},
+            onNavigateToServices = {},
+            onNavigateToBarbers = {},
+            onNavigateToAppointmentDetails = {}
+        )
     }
 }
 

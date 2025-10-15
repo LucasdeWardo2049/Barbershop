@@ -1,7 +1,6 @@
 package com.pdm.barbershop.ui.feature.schedule
 
-import android.os.Build
-import androidx.annotation.RequiresApi
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -18,27 +17,26 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pdm.barbershop.domain.model.Barber
 import com.pdm.barbershop.domain.model.Service
 import java.text.NumberFormat
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.util.*
 
-@RequiresApi(Build.VERSION_CODES.O)
+@SuppressLint("NewApi")
 @Composable
 fun ScheduleScreen(
     viewModel: ScheduleViewModel = viewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -178,10 +176,9 @@ fun TimeSlotChip(time: String, isSelected: Boolean, onTimeSelected: () -> Unit) 
     )
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DateChip(date: LocalDate, isSelected: Boolean, onDateSelected: () -> Unit) {
-    val formatter = DateTimeFormatter.ofPattern("dd/MM")
+    val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM")
     BaseChip(
         label = date.format(formatter),
         isSelected = isSelected,
@@ -258,11 +255,10 @@ fun SchedulingStep(title: String, content: @Composable () -> Unit) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppointmentSummaryCard(uiState: ScheduleUiState) {
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.getDefault())
-    val dateFormatter = DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale("pt", "BR"))
+    val dateFormatter = java.time.format.DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale.forLanguageTag("pt-BR"))
 
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
