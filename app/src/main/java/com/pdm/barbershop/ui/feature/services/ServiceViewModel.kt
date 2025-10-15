@@ -16,7 +16,7 @@ class ServicesViewModel(
     private val getProducts: GetProductsUseCase = GetProductsUseCase(repository)
 ) : ViewModel() {
 
-    private val _state = androidx.compose.runtime.mutableStateOf<ServicesUiState>(ServicesUiState.Loading)
+    private val _state = androidx.compose.runtime.mutableStateOf<ServicesUiState>(ServicesUiState.Content())
     val state: androidx.compose.runtime.State<ServicesUiState> = _state
 
     init {
@@ -24,7 +24,6 @@ class ServicesViewModel(
     }
 
     fun refresh() {
-        _state.value = ServicesUiState.Loading
         viewModelScope.launch {
             try {
                 val services = withContext(Dispatchers.Default) { getServices() }

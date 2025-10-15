@@ -7,17 +7,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-data class ProfileUiState(
-    val userName: String = "",
-    val userEmail: String = "",
-    val profileImageUri: Uri? = null,
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
+sealed interface ProfileUiState {
+    data object Loading : ProfileUiState
+    data class Content(
+        val userName: String = "",
+        val userEmail: String = "",
+        val profileImageUri: Uri? = null
+    ) : ProfileUiState
+    data class Error(val message: String) : ProfileUiState
+}
 
 class ProfileViewModel : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ProfileUiState())
+    private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val uiState: StateFlow<ProfileUiState> = _uiState
 
     init {
@@ -26,25 +28,30 @@ class ProfileViewModel : ViewModel() {
 
     private fun fetchUserData() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            kotlinx.coroutines.delay(1000)
-            _uiState.value = _uiState.value.copy(
-                userName = "Eduardo",
-                userEmail = "eduardo.dev@example.com",
-                isLoading = false
-            )
+            try {
+                kotlinx.coroutines.delay(1000)
+                _uiState.value = ProfileUiState.Content(
+                    userName = "Eduardo",
+                    userEmail = "eduardo.dev@example.com",
+                    profileImageUri = null
+                )
+            } catch (t: Throwable) {
+                _uiState.value = ProfileUiState.Error(t.message ?: "Erro ao carregar perfil")
+            }
         }
     }
 
     fun onProfileImageChanged(uri: Uri?) {
-        _uiState.value = _uiState.value.copy(profileImageUri = uri)
-        // TODO: Implementar upload da imagem para o servidor futuramente
+        val current = _uiState.value
+        if (current is ProfileUiState.Content) {
+            _uiState.value = current.copy(profileImageUri = uri)
+        }
     }
 
     fun logout() {
         viewModelScope.launch {
             // TODO: Limpar sessão, tokens, etc.
-            _uiState.value = ProfileUiState() // Reseta estado
+            _uiState.value = ProfileUiState.Content() // Reseta estado visual para vazio
         }
     }
 }

@@ -7,19 +7,19 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,7 +36,8 @@ import java.util.*
 fun ScheduleScreen(
     viewModel: ScheduleViewModel = viewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // Consumimos apenas o conteúdo consolidado para evitar problemas de pattern matching
+    val uiState by viewModel.content.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -51,7 +52,8 @@ fun ScheduleScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
-                items(uiState.services) { service ->
+                items(uiState.services.size) { index ->
+                    val service = uiState.services[index]
                     ServiceChip(
                         service = service,
                         isSelected = service == uiState.selectedService,
@@ -73,7 +75,8 @@ fun ScheduleScreen(
                     contentPadding = PaddingValues(vertical = 8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(uiState.barbers) { barber ->
+                    items(uiState.barbers.size) { index ->
+                        val barber = uiState.barbers[index]
                         BarberItem(
                             barber = barber,
                             isSelected = barber == uiState.selectedBarber,
@@ -96,7 +99,8 @@ fun ScheduleScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    items(uiState.availableDates) { date ->
+                    items(uiState.availableDates.size) { index ->
+                        val date = uiState.availableDates[index]
                         DateChip(
                             date = date,
                             isSelected = date == uiState.selectedDate,
@@ -108,7 +112,7 @@ fun ScheduleScreen(
                 // Horários
                 when {
                     uiState.isLoadingTimeSlots -> {
-                        CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
                     }
                     uiState.selectedDate != null && uiState.availableTimeSlots.isEmpty() -> {
                         Text(
@@ -125,7 +129,8 @@ fun ScheduleScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(uiState.availableTimeSlots) { time ->
+                            items(uiState.availableTimeSlots.size) { index ->
+                                val time = uiState.availableTimeSlots[index]
                                 TimeSlotChip(
                                     time = time,
                                     isSelected = time == uiState.selectedTime,
@@ -156,7 +161,8 @@ fun ScheduleScreen(
             onClick = { /* TODO: Confirmar agendamento */ },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp),
+                .height(50.dp)
+                .semantics { contentDescription = "Confirmar agendamento" },
             enabled = uiState.isConfirmationButtonEnabled,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary
@@ -172,7 +178,8 @@ fun TimeSlotChip(time: String, isSelected: Boolean, onTimeSelected: () -> Unit) 
     BaseChip(
         label = time,
         isSelected = isSelected,
-        onClick = onTimeSelected
+        onClick = onTimeSelected,
+        modifier = Modifier.semantics { contentDescription = "Horário $time" }
     )
 }
 
@@ -182,7 +189,8 @@ fun DateChip(date: LocalDate, isSelected: Boolean, onDateSelected: () -> Unit) {
     BaseChip(
         label = date.format(formatter),
         isSelected = isSelected,
-        onClick = onDateSelected
+        onClick = onDateSelected,
+        modifier = Modifier.semantics { contentDescription = "Data ${date.format(formatter)}" }
     )
 }
 
@@ -196,12 +204,13 @@ fun ServiceChip(service: Service, isSelected: Boolean, onServiceSelected: () -> 
             containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
             labelColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.semantics { contentDescription = "Serviço ${service.name}" }
     )
 }
 
 @Composable
-fun BaseChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
+fun BaseChip(label: String, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     AssistChip(
         onClick = onClick,
         label = { Text(label) },
@@ -209,7 +218,8 @@ fun BaseChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
             containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
             labelColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier
     )
 }
 
@@ -219,13 +229,14 @@ fun BarberItem(barber: Barber, isSelected: Boolean, onBarberSelected: () -> Unit
         modifier = Modifier
             .width(120.dp)
             .height(140.dp)
-            .clickable { onBarberSelected() },
+            .clickable { onBarberSelected() }
+            .semantics { contentDescription = "Profissional ${barber.name}" },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
         )
     ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+        Box(contentAlignment = androidx.compose.ui.Alignment.Center, modifier = Modifier.fillMaxSize()) {
             Text(
                 barber.name,
                 style = MaterialTheme.typography.bodyMedium,
