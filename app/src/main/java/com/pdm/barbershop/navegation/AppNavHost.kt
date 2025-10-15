@@ -1,25 +1,23 @@
 package com.pdm.barbershop.navegation
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navDeepLink
 import com.pdm.barbershop.ui.feature.about.AboutScreen
 import com.pdm.barbershop.ui.feature.appointments.AppointmentsScreen
 import com.pdm.barbershop.ui.feature.barbers.BarbersScreen
 import com.pdm.barbershop.ui.feature.comanda.ComandaHistoryScreen
 import com.pdm.barbershop.ui.feature.help.HelpScreen
-import com.pdm.barbershop.ui.feature.home.HomeScreen // Import da HomeScreen
+import com.pdm.barbershop.ui.feature.home.HomeScreen
 import com.pdm.barbershop.ui.feature.notifications.NotificationsScreen
 import com.pdm.barbershop.ui.feature.profile.EditProfileScreen
 import com.pdm.barbershop.ui.feature.profile.ProfileScreen
 import com.pdm.barbershop.ui.feature.schedule.ScheduleScreen
 import com.pdm.barbershop.ui.feature.services.ServicesScreen
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavHost(
     navController: NavHostController,
@@ -31,23 +29,51 @@ fun AppNavHost(
         startDestination = startDestination,
         modifier = modifier
     ) {
-        composable(AppDestination.Home.route) {
+        composable(
+            route = AppDestination.Home.route,
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "https://barbershop.app/home" },
+                navDeepLink { uriPattern = "barbershop://home" }
+            )
+        ) {
             HomeScreen(
                 onNavigateToSchedule = { navController.navigate(AppDestination.Schedule.route) },
                 onNavigateToServices = { navController.navigate(AppDestination.Services.route) },
                 onNavigateToBarbers = { navController.navigate(AppDestination.Barbers.route) },
-                onNavigateToAppointmentDetails = { appointmentId ->
-                    // No futuro, você pode querer uma tela de detalhes específica.
-                    // Por agora, navega para a lista geral de agendamentos.
+                onNavigateToAppointmentDetails = { _ ->
                     navController.navigate(AppDestination.Appointments.route)
                 }
             )
         }
-        composable(AppDestination.Services.route) { ServicesScreen() }
-        composable(AppDestination.Barbers.route) { BarbersScreen() }
-        composable(AppDestination.Schedule.route) { ScheduleScreen() }
+        composable(
+            route = AppDestination.Services.route,
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "https://barbershop.app/services" },
+                navDeepLink { uriPattern = "barbershop://services" }
+            )
+        ) { ServicesScreen() }
+        composable(
+            route = AppDestination.Barbers.route,
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "https://barbershop.app/barbers" },
+                navDeepLink { uriPattern = "barbershop://barbers" }
+            )
+        ) { BarbersScreen() }
+        composable(
+            route = AppDestination.Schedule.route,
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "https://barbershop.app/schedule" },
+                navDeepLink { uriPattern = "barbershop://schedule" }
+            )
+        ) { ScheduleScreen() }
 
-        composable(AppDestination.Profile.route) {
+        composable(
+            route = AppDestination.Profile.route,
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "https://barbershop.app/profile" },
+                navDeepLink { uriPattern = "barbershop://profile" }
+            )
+        ) {
             ProfileScreen(
                 onEditProfileClick = { navController.navigate(AppDestination.EditProfile.route) },
                 onAppointmentsClick = { navController.navigate(AppDestination.Appointments.route) },

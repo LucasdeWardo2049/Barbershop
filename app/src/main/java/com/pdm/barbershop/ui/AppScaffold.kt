@@ -1,5 +1,6 @@
 package com.pdm.barbershop.ui
 
+import android.app.Activity
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -9,7 +10,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.pdm.barbershop.navegation.AppDestination
@@ -20,6 +23,17 @@ import com.pdm.barbershop.ui.components.CustomBottomBar
 @Composable
 fun AppScaffold() {
     val navController = rememberNavController()
+
+    // Handle initial deep link intent
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        val activity = context as? Activity
+        val intent = activity?.intent
+        if (intent != null) {
+            navController.handleDeepLink(intent)
+        }
+    }
+
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val currentDestination = AppDestination.fromRoute(currentRoute)
@@ -34,7 +48,7 @@ fun AppScaffold() {
                 CenterAlignedTopAppBar(
                     title = { Text(text = currentDestination?.title ?: "Barbershop") },
                     // NOVO: Aplica as cores do nosso tema
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         titleContentColor = MaterialTheme.colorScheme.onPrimary
                     )

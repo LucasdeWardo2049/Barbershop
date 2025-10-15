@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,12 +8,12 @@ plugins {
 
 android {
     namespace = "com.pdm.barbershop"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.pdm.barbershop"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -31,40 +33,59 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
-    kotlinOptions { jvmTarget = "17" }
 
     buildFeatures { compose = true }
 
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
 }
 
+kotlin {
+    jvmToolchain(17)
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
+}
+
 dependencies {
-    implementation("io.coil-kt:coil-compose:2.6.0")
+    // Coil
+    implementation(libs.coil.compose)
 
     // Compose BOM
-    implementation(platform("androidx.compose:compose-bom:2024.10.01"))
+    implementation(platform(libs.androidx.compose.bom))
 
-    // Material 3
-    implementation("androidx.compose.material3:material3")
+    // Compose core
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
 
-    // Ícones Material
-    implementation("androidx.compose.material:material-icons-extended")
+    // Material 3 e ícones
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
 
     // Navigation Compose
-    implementation("androidx.navigation:navigation-compose:2.8.0")
+    implementation(libs.androidx.navigation.compose)
 
-    // Activity/Runtime Compose
-    implementation("androidx.activity:activity-compose:1.9.2")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
+    // Activity/Runtime/Lifecycle Compose
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
-    // Optional: Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-    implementation(libs.androidx.ui.graphics)
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
+
+    // Firebase tools
     implementation(libs.firebase.crashlytics.buildtools)
 
+    // Core library desugaring
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
+
     // Tooling
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    implementation("androidx.compose.ui:ui-tooling-preview")
+    debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // Tests
+    testImplementation(libs.junit.jupiter)
+    testImplementation(kotlin("test"))
 }
