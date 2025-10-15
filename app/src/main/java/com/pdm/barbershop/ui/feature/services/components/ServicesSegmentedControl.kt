@@ -30,10 +30,9 @@ fun ServicesSegmentedControl(
                 selected = selectedTab == tab,
                 onClick = { onSelect(tab) },
                 shape = SegmentedButtonDefaults.itemShape(index = index, count = items.size),
-                icon = { Icon(icon, contentDescription = null) },
+                icon = { Icon(icon, contentDescription = label) },
                 label = { Text(label) },
             )
         }
     }
 }
-
