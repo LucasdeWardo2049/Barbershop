@@ -11,5 +11,5 @@ Email: barbeiro@barbeiro.com
 ◦Senha: barbeiro
 
 
-Email: barbeiro@barbeiro.com
-◦Senha: barbeiro
+Email: admin@admin.com
+◦Senha: admin
