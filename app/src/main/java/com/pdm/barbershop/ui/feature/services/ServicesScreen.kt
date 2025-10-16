@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,38 +25,36 @@ fun ServicesScreen(
     val state by viewModel.state
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Segmented buttons fixos no topo
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            ServicesSegmentedControl(
-                selectedTab = state.selectedTab,
-                onSelect = viewModel::onTabSelected
-            )
-        }
-
-        // Conteúdo
-        when {
-            state.isLoading -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+        when (val s = state) {
+            is ServicesUiState.Loading -> {
+                // Removido o efeito visual de loading (spinner)
+                // Mantemos a tela em branco até o conteúdo chegar
             }
-            state.error != null -> {
+            is ServicesUiState.Error -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = state.error ?: "Erro",
+                        text = s.message,
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.error
                     )
                 }
             }
-            else -> {
-                val list: List<CatalogItem> = when (state.selectedTab) {
-                    ServicesTab.Services -> state.services
-                    ServicesTab.Products -> state.products
+            is ServicesUiState.Content -> {
+                // Segmented buttons no topo
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    ServicesSegmentedControl(
+                        selectedTab = s.selectedTab,
+                        onSelect = viewModel::onTabSelected
+                    )
+                }
+
+                val list: List<CatalogItem> = when (s.selectedTab) {
+                    ServicesTab.Services -> s.services
+                    ServicesTab.Products -> s.products
                 }
 
                 LazyColumn(
