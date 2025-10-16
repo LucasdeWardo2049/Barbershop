@@ -18,6 +18,9 @@ android {
         versionName = "1.0"
 
         vectorDrawables { useSupportLibrary = true }
+
+        // Add test instrumentation runner for androidTest
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -88,4 +91,12 @@ dependencies {
     // Tests
     testImplementation(libs.junit.jupiter)
     testImplementation(kotlin("test"))
+
+    // Instrumented Android tests
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.androidx.test.core.ktx)
+    androidTestImplementation(libs.junit4)
+    // Add Kotlin test API for androidTest as well
+    androidTestImplementation(kotlin("test"))
 }

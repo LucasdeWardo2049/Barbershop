@@ -6,11 +6,17 @@ activityCompose = "1.11.0"
 composeBom = "2025.10.00"
 firebaseCrashlyticsBuildtools = "3.0.6"
 junitJupiter = "6.0.0"
+junit4 = "4.13.2"
 coilCompose = "2.7.0"
 navigationCompose = "2.9.5"
 lifecycleViewModelCompose = "2.9.4"
 coroutinesAndroid = "1.10.2"
 desugarJdkLibs = "2.1.5"
+
+# Android test versions
+espressoCore = "3.5.1"
+androidxTestCoreKtx = "1.5.0"
+androidxTestExtJunit = "1.1.5"
 
 [libraries]
 # Compose BOM
@@ -45,6 +51,12 @@ desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", ver
 
 # Test
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junitJupiter" }
+junit4 = { group = "junit", name = "junit", version.ref = "junit4" }
+
+# Android instrumented test libraries
+androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
+androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "androidxTestCoreKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

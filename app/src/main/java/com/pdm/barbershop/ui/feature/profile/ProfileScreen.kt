@@ -52,7 +52,7 @@ fun ProfileScreen(
 
     when (val ui = state) {
         is ProfileUiState.Loading -> {
-            // Sem spinner para manter consistência com Services
+
         }
         is ProfileUiState.Error -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
