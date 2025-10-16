@@ -48,56 +48,54 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    if (uiState.isLoading) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            CircularProgressIndicator()
+    when (val state = uiState) {
+        is HomeUiState.Loading -> {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) { CircularProgressIndicator() }
         }
-    } else {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()) // Para permitir rolagem se o conteúdo for grande
-                .padding(16.dp)
-        ) {
-            // 1. Saudação
-            GreetingSection(userName = uiState.userName)
+        is HomeUiState.Error -> {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) { Text(text = state.message, color = MaterialTheme.colorScheme.error) }
+        }
+        is HomeUiState.Content -> {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp)
+            ) {
+                GreetingSection(userName = state.userName)
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 2. Card do Próximo Agendamento
-            uiState.nextAppointment?.let { appointment ->
-                NextAppointmentCard(
-                    appointment = appointment,
-                    onSeeDetailsClicked = { 
-                        // viewModel.onSeeDetailsClicked(appointment.id) 
-                        onNavigateToAppointmentDetails(appointment.id)
-                    }
-                )
                 Spacer(modifier = Modifier.height(24.dp))
-            }
 
-            // 3. Botões de Atalho
-            QuickActionsSection(
-                onScheduleServiceClicked = onNavigateToSchedule,
-                onServicesClicked = onNavigateToServices,
-                onBarbersClicked = onNavigateToBarbers
-            )
+                state.nextAppointment?.let { appointment ->
+                    NextAppointmentCard(
+                        appointment = appointment,
+                        onSeeDetailsClicked = { onNavigateToAppointmentDetails(appointment.id) }
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 4. Card de Reagendamento Rápido
-            uiState.lastServiceForRebooking?.let { service ->
-                QuickRebookCard(
-                    service = service,
-                    onRebookClicked = { 
-                        // viewModel.onRebookServiceClicked(service.id)
-                        onNavigateToSchedule() // Ou uma navegação específica para reagendamento com o ID do serviço
-                    }
+                QuickActionsSection(
+                    onScheduleServiceClicked = onNavigateToSchedule,
+                    onServicesClicked = onNavigateToServices,
+                    onBarbersClicked = onNavigateToBarbers
                 )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                state.lastServiceForRebooking?.let { service ->
+                    QuickRebookCard(
+                        service = service,
+                        onRebookClicked = { onNavigateToSchedule() }
+                    )
+                }
             }
         }
     }
@@ -138,9 +136,7 @@ fun NextAppointmentCard(appointment: Appointment, onSeeDetailsClicked: () -> Uni
             OutlinedButton(
                 onClick = onSeeDetailsClicked,
                 modifier = Modifier.align(Alignment.End)
-            ) {
-                Text("Ver Detalhes")
-            }
+            ) { Text("Ver Detalhes") }
         }
     }
 }
@@ -160,7 +156,7 @@ fun QuickActionsSection(
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround // Ou Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.SpaceAround
         ) {
             QuickActionButton(
                 text = "Agendar",
@@ -190,12 +186,12 @@ fun QuickActionsSection(
 fun QuickActionButton(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Button(
         onClick = onClick,
-        modifier = modifier.height(80.dp) // Altura fixa para os botões de ação
+        modifier = modifier.height(80.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(imageVector = icon, contentDescription = text, modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text, fontSize = 12.sp) // Tamanho de fonte menor para caber
+            Text(text, fontSize = 12.sp)
         }
     }
 }
