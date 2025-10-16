@@ -1,6 +1,5 @@
 package com.pdm.barbershop.navegation
 
-import android.annotation.SuppressLint
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -19,7 +18,6 @@ import com.pdm.barbershop.ui.feature.profile.ProfileScreen
 import com.pdm.barbershop.ui.feature.schedule.ScheduleScreen
 import com.pdm.barbershop.ui.feature.services.ServicesScreen
 
-@SuppressLint("NewApi")
 @Composable
 fun AppNavHost(
     navController: NavHostController,

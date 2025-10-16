@@ -21,8 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.pdm.barbershop.R
@@ -35,18 +33,8 @@ fun ServiceCard(
     item: CatalogItem,
     modifier: Modifier = Modifier,
 ) {
-    val priceText = item.price.toBRL()
-    val durationText = item.durationMinutes?.let { mins ->
-        stringResource(R.string.duration_minutes, mins)
-    }
-    val cardA11y = listOfNotNull(item.name, priceText, durationText).joinToString(
-        separator = ", "
-    )
-
     ElevatedCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .semantics { this.contentDescription = cardA11y }
+        modifier = modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -57,10 +45,7 @@ fun ServiceCard(
                     CatalogItemType.SERVICE -> Icons.Outlined.ContentCut
                     CatalogItemType.PRODUCT -> Icons.Outlined.ShoppingBag
                 },
-                contentDescription = when (item.type) {
-                    CatalogItemType.SERVICE -> stringResource(R.string.services_tab_services)
-                    CatalogItemType.PRODUCT -> stringResource(R.string.services_tab_products)
-                },
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary
             )
             Column(modifier = Modifier.weight(1f)) {
@@ -86,11 +71,11 @@ fun ServiceCard(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AssistChip(
                         onClick = { },
-                        label = { Text(priceText) },
+                        label = { Text(item.price.toBRL()) },
                         leadingIcon = {
                             Icon(
                                 Icons.Outlined.MonetizationOn,
-                                contentDescription = priceText
+                                contentDescription = null
                             )
                         },
                         colors = AssistChipDefaults.assistChipColors(
@@ -106,7 +91,7 @@ fun ServiceCard(
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.AccessTime,
-                                    contentDescription = stringResource(R.string.duration_minutes, mins)
+                                    contentDescription = null
                                 )
                             }
                         )

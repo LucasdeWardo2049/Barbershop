@@ -26,16 +26,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pdm.barbershop.domain.model.Appointment
 import com.pdm.barbershop.domain.model.Service
@@ -48,78 +46,59 @@ fun HomeScreen(
     onNavigateToBarbers: () -> Unit = {},
     onNavigateToAppointmentDetails: (String) -> Unit = {}
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsState()
 
-    when (val uiState = state) {
-        is HomeUiState.Loading -> {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) { CircularProgressIndicator() }
+    if (uiState.isLoading) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            CircularProgressIndicator()
         }
-        is HomeUiState.Error -> {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) { Text(uiState.message) }
-        }
-        is HomeUiState.Content -> {
-            HomeContent(
-                uiState = uiState,
-                onNavigateToSchedule = onNavigateToSchedule,
-                onNavigateToServices = onNavigateToServices,
-                onNavigateToBarbers = onNavigateToBarbers,
-                onNavigateToAppointmentDetails = onNavigateToAppointmentDetails
-            )
-        }
-    }
-}
+    } else {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()) // Para permitir rolagem se o conteúdo for grande
+                .padding(16.dp)
+        ) {
+            // 1. Saudação
+            GreetingSection(userName = uiState.userName)
 
-@Composable
-private fun HomeContent(
-    uiState: HomeUiState.Content,
-    onNavigateToSchedule: () -> Unit,
-    onNavigateToServices: () -> Unit,
-    onNavigateToBarbers: () -> Unit,
-    onNavigateToAppointmentDetails: (String) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        // 1. Saudação
-        GreetingSection(userName = uiState.userName)
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // 2. Card do Próximo Agendamento
-        uiState.nextAppointment?.let { appointment ->
-            NextAppointmentCard(
-                appointment = appointment,
-                onSeeDetailsClicked = { onNavigateToAppointmentDetails(appointment.id) }
-            )
             Spacer(modifier = Modifier.height(24.dp))
-        }
 
-        // 3. Botões de Atalho
-        QuickActionsSection(
-            onScheduleServiceClicked = onNavigateToSchedule,
-            onServicesClicked = onNavigateToServices,
-            onBarbersClicked = onNavigateToBarbers
-        )
+            // 2. Card do Próximo Agendamento
+            uiState.nextAppointment?.let { appointment ->
+                NextAppointmentCard(
+                    appointment = appointment,
+                    onSeeDetailsClicked = { 
+                        // viewModel.onSeeDetailsClicked(appointment.id) 
+                        onNavigateToAppointmentDetails(appointment.id)
+                    }
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // 4. Card de Reagendamento Rápido
-        uiState.lastServiceForRebooking?.let { service ->
-            QuickRebookCard(
-                service = service,
-                onRebookClicked = { onNavigateToSchedule() }
+            // 3. Botões de Atalho
+            QuickActionsSection(
+                onScheduleServiceClicked = onNavigateToSchedule,
+                onServicesClicked = onNavigateToServices,
+                onBarbersClicked = onNavigateToBarbers
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 4. Card de Reagendamento Rápido
+            uiState.lastServiceForRebooking?.let { service ->
+                QuickRebookCard(
+                    service = service,
+                    onRebookClicked = { 
+                        // viewModel.onRebookServiceClicked(service.id)
+                        onNavigateToSchedule() // Ou uma navegação específica para reagendamento com o ID do serviço
+                    }
+                )
+            }
         }
     }
 }
@@ -158,9 +137,7 @@ fun NextAppointmentCard(appointment: Appointment, onSeeDetailsClicked: () -> Uni
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedButton(
                 onClick = onSeeDetailsClicked,
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .semantics { contentDescription = "Ver detalhes do agendamento" }
+                modifier = Modifier.align(Alignment.End)
             ) {
                 Text("Ver Detalhes")
             }
@@ -183,33 +160,27 @@ fun QuickActionsSection(
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround
+            horizontalArrangement = Arrangement.SpaceAround // Ou Arrangement.spacedBy(8.dp)
         ) {
             QuickActionButton(
                 text = "Agendar",
                 icon = Icons.Filled.CalendarMonth,
                 onClick = onScheduleServiceClicked,
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics { contentDescription = "Ir para agendamento" }
+                modifier = Modifier.weight(1f)
             )
             Spacer(modifier = Modifier.size(8.dp))
             QuickActionButton(
                 text = "Serviços",
                 icon = Icons.Filled.ContentCut,
                 onClick = onServicesClicked,
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics { contentDescription = "Ver serviços" }
+                modifier = Modifier.weight(1f)
             )
             Spacer(modifier = Modifier.size(8.dp))
             QuickActionButton(
                 text = "Barbeiros",
                 icon = Icons.Filled.Groups,
                 onClick = onBarbersClicked,
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics { contentDescription = "Ver barbeiros" }
+                modifier = Modifier.weight(1f)
             )
         }
     }
@@ -219,12 +190,12 @@ fun QuickActionsSection(
 fun QuickActionButton(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Button(
         onClick = onClick,
-        modifier = modifier.height(80.dp)
+        modifier = modifier.height(80.dp) // Altura fixa para os botões de ação
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(imageVector = icon, contentDescription = text, modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text, fontSize = 12.sp)
+            Text(text, fontSize = 12.sp) // Tamanho de fonte menor para caber
         }
     }
 }
@@ -257,11 +228,9 @@ fun QuickRebookCard(service: Service, onRebookClicked: () -> Unit) {
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Button(
+            Button( // Mudado para Button normal para mais destaque
                 onClick = onRebookClicked,
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .semantics { contentDescription = "Agendar novamente ${service.name}" }
+                modifier = Modifier.align(Alignment.End)
             ) {
                 Icon(Icons.Filled.Repeat, contentDescription = "Reagendar", modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
@@ -271,22 +240,12 @@ fun QuickRebookCard(service: Service, onRebookClicked: () -> Unit) {
     }
 }
 
+
 @Preview(showBackground = true, name = "HomeScreen Preview")
 @Composable
 fun HomeScreenPreview() {
-    val sampleState = HomeUiState.Content(
-        userName = "Eduardo",
-        nextAppointment = Appointment("1", "24/09", "15:00", "Corte + Barba", "Fernando Silva", "Confirmado"),
-        lastServiceForRebooking = Service("s1", "Corte Masculino", 50.0, 45, Icons.Filled.ContentCut)
-    )
     MaterialTheme {
-        HomeContent(
-            uiState = sampleState,
-            onNavigateToSchedule = {},
-            onNavigateToServices = {},
-            onNavigateToBarbers = {},
-            onNavigateToAppointmentDetails = {}
-        )
+        HomeScreen(viewModel = HomeViewModel())
     }
 }
 
