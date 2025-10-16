@@ -90,7 +90,7 @@ fun AppNavHost(
                 onHelpClick = { navController.navigate(AppDestination.Help.route) },
                 onAboutClick = { navController.navigate(AppDestination.About.route) },
                 onLogoutClick = {
-                    onLogout() // Informa  MainViewModel sobre o logout
+                    onLogout() // Informa ao MainViewModel sobre o logout
                     navController.navigate(AppDestination.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
