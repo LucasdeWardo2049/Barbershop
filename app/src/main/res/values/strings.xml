@@ -12,5 +12,17 @@
     <string name="nav_notifications">Notificações</string>
     <string name="nav_help">Ajuda e Suporte</string>
     <string name="nav_about">Sobre o App</string>
+    <string name="nav_login">Login</string>
+    <string name="nav_logout">Sair</string>
+
+    <!-- Barber -->
+    <string name="nav_barber_dashboard">Painel</string>
+    <string name="nav_barber_schedule">Agenda</string>
+    <string name="nav_barber_reports">Relatórios</string>
+
+    <!-- Admin -->
+    <string name="nav_admin_dashboard">Painel</string>
+    <string name="nav_admin_users">Usuários</string>
+    <string name="nav_admin_reports">Relatórios</string>
 
 </resources>

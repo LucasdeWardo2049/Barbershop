@@ -16,7 +16,7 @@ class ServicesViewModel(
     private val getProducts: GetProductsUseCase = GetProductsUseCase(repository)
 ) : ViewModel() {
 
-    private val _state = androidx.compose.runtime.mutableStateOf<ServicesUiState>(ServicesUiState.Loading)
+    private val _state = androidx.compose.runtime.mutableStateOf(ServicesUiState())
     val state: androidx.compose.runtime.State<ServicesUiState> = _state
 
     init {
@@ -24,26 +24,23 @@ class ServicesViewModel(
     }
 
     fun refresh() {
-        _state.value = ServicesUiState.Loading
+        _state.value = _state.value.copy(isLoading = true, error = null)
         viewModelScope.launch {
             try {
                 val services = withContext(Dispatchers.Default) { getServices() }
                 val products = withContext(Dispatchers.Default) { getProducts() }
-                _state.value = ServicesUiState.Content(
-                    selectedTab = (state.value as? ServicesUiState.Content)?.selectedTab ?: ServicesTab.Services,
+                _state.value = _state.value.copy(
+                    isLoading = false,
                     services = services,
                     products = products
                 )
             } catch (t: Throwable) {
-                _state.value = ServicesUiState.Error(t.message ?: "Erro ao carregar serviços e produtos")
+                _state.value = _state.value.copy(isLoading = false, error = t.message)
             }
         }
     }
 
     fun onTabSelected(tab: ServicesTab) {
-        val current = _state.value
-        if (current is ServicesUiState.Content) {
-            _state.value = current.copy(selectedTab = tab)
-        }
+        _state.value = _state.value.copy(selectedTab = tab)
     }
 }

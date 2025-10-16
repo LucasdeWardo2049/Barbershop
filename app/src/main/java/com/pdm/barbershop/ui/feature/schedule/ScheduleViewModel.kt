@@ -1,5 +1,7 @@
 package com.pdm.barbershop.ui.feature.schedule
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Face
@@ -26,9 +28,11 @@ data class ScheduleUiState(
     val selectedDate: LocalDate? = null,
     val selectedTime: String? = null,
     val isConfirmationButtonEnabled: Boolean = false,
-    val isLoadingTimeSlots: Boolean = false
+    val isLoadingTimeSlots: Boolean = false,
+    val scheduleSuccess: Boolean = false
 )
 
+@RequiresApi(Build.VERSION_CODES.O)
 class ScheduleViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(ScheduleUiState())
     val uiState = _uiState.asStateFlow()
@@ -88,6 +92,14 @@ class ScheduleViewModel : ViewModel() {
     fun onTimeSelected(time: String) {
         _uiState.update { it.copy(selectedTime = time) }
         checkIfButtonShouldBeEnabled()
+    }
+
+    fun onScheduleClick() {
+        _uiState.update { it.copy(scheduleSuccess = true) }
+    }
+
+    fun onScheduleConfirmedShown() {
+        _uiState.update { it.copy(scheduleSuccess = false) }
     }
 
     private fun checkIfButtonShouldBeEnabled() {

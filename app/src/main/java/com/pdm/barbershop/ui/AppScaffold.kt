@@ -1,6 +1,7 @@
 package com.pdm.barbershop.ui
 
-import android.app.Activity
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -9,46 +10,46 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.pdm.barbershop.domain.model.UserRole
 import com.pdm.barbershop.navegation.AppDestination
 import com.pdm.barbershop.navegation.AppNavHost
 import com.pdm.barbershop.ui.components.CustomBottomBar
 
 @OptIn(ExperimentalMaterial3Api::class)
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AppScaffold() {
+fun AppScaffold(
+    mainViewModel: MainViewModel = viewModel()
+) {
     val navController = rememberNavController()
-
-    // Handle initial deep link intent
-    val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        val activity = context as? Activity
-        val intent = activity?.intent
-        if (intent != null) {
-            navController.handleDeepLink(intent)
-        }
-    }
+    val mainUiState by mainViewModel.uiState.collectAsState()
+    val userRole = mainUiState.userRole
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val currentDestination = AppDestination.fromRoute(currentRoute)
 
-    // NOVO: Lógica para decidir quando exibir as barras de navegação
-    val shouldShowBars = currentDestination in AppDestination.bottom
+    val bottomNavItems = when (userRole) {
+        UserRole.CLIENT -> AppDestination.clientBottomNav
+        UserRole.BARBER -> AppDestination.barberBottomNav
+        UserRole.ADMIN -> AppDestination.adminBottomNav
+        null -> emptyList()
+    }
+
+    val currentDestination = AppDestination.fromRoute(currentRoute)
+    val shouldShowBars = currentDestination in bottomNavItems
 
     Scaffold(
         topBar = {
-            // A TopAppBar só será exibida nas telas principais
             if (shouldShowBars) {
                 CenterAlignedTopAppBar(
-                    title = { Text(text = currentDestination?.title ?: "Barbershop") },
-                    // NOVO: Aplica as cores do nosso tema
-                    colors = TopAppBarDefaults.topAppBarColors(
+                    title = { Text(text = currentDestination?.title ?: "") },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         titleContentColor = MaterialTheme.colorScheme.onPrimary
                     )
@@ -56,15 +57,19 @@ fun AppScaffold() {
             }
         },
         bottomBar = {
-            // A BottomBar só será exibida nas telas principais
             if (shouldShowBars) {
-                CustomBottomBar(navController = navController)
+                CustomBottomBar(
+                    navController = navController,
+                    bottomNavItems = bottomNavItems
+                )
             }
         }
     ) { innerPadding ->
         AppNavHost(
             navController = navController,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            onLoginSuccess = mainViewModel::onLoginSuccess,
+            onLogout = mainViewModel::onLogout
         )
     }
 }
