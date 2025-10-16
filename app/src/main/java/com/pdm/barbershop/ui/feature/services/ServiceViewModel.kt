@@ -1,5 +1,7 @@
 package com.pdm.barbershop.ui.feature.services
 
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pdm.barbershop.data.repository.FakeCatalogRepository
@@ -16,20 +18,19 @@ class ServicesViewModel(
     private val getProducts: GetProductsUseCase = GetProductsUseCase(repository)
 ) : ViewModel() {
 
-    private val _state = androidx.compose.runtime.mutableStateOf<ServicesUiState>(ServicesUiState.Content())
-    val state: androidx.compose.runtime.State<ServicesUiState> = _state
+    private val _state = mutableStateOf<ServicesUiState>(ServicesUiState.Loading)
+    val state: State<ServicesUiState> = _state
 
-    init {
-        refresh()
-    }
+    init { refresh() }
 
     fun refresh() {
         viewModelScope.launch {
             try {
                 val services = withContext(Dispatchers.Default) { getServices() }
                 val products = withContext(Dispatchers.Default) { getProducts() }
+                val selected = (state.value as? ServicesUiState.Content)?.selectedTab ?: ServicesTab.Services
                 _state.value = ServicesUiState.Content(
-                    selectedTab = (state.value as? ServicesUiState.Content)?.selectedTab ?: ServicesTab.Services,
+                    selectedTab = selected,
                     services = services,
                     products = products
                 )

@@ -67,9 +67,7 @@ fun AppScaffold(
     ) { innerPadding ->
         AppNavHost(
             navController = navController,
-            modifier = Modifier.padding(innerPadding),
-            onLoginSuccess = mainViewModel::onLoginSuccess,
-            onLogout = mainViewModel::onLogout
+            modifier = Modifier.padding(innerPadding)
         )
     }
 }
