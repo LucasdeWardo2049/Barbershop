@@ -28,7 +28,8 @@ data class ScheduleUiState(
     val selectedDate: LocalDate? = null,
     val selectedTime: String? = null,
     val isConfirmationButtonEnabled: Boolean = false,
-    val isLoadingTimeSlots: Boolean = false
+    val isLoadingTimeSlots: Boolean = false,
+    val scheduleSuccess: Boolean = false
 )
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -91,6 +92,14 @@ class ScheduleViewModel : ViewModel() {
     fun onTimeSelected(time: String) {
         _uiState.update { it.copy(selectedTime = time) }
         checkIfButtonShouldBeEnabled()
+    }
+
+    fun onScheduleClick() {
+        _uiState.update { it.copy(scheduleSuccess = true) }
+    }
+
+    fun onScheduleConfirmedShown() {
+        _uiState.update { it.copy(scheduleSuccess = false) }
     }
 
     private fun checkIfButtonShouldBeEnabled() {
