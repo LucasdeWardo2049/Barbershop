@@ -48,56 +48,49 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    if (uiState.isLoading) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            CircularProgressIndicator()
+    when (val state = uiState) {
+        is HomeUiState.Loading -> {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) { CircularProgressIndicator() }
         }
-    } else {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()) // Para permitir rolagem se o conteúdo for grande
-                .padding(16.dp)
-        ) {
-            // 1. Saudação
-            GreetingSection(userName = uiState.userName)
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 2. Card do Próximo Agendamento
-            uiState.nextAppointment?.let { appointment ->
-                NextAppointmentCard(
-                    appointment = appointment,
-                    onSeeDetailsClicked = { 
-                        // viewModel.onSeeDetailsClicked(appointment.id) 
-                        onNavigateToAppointmentDetails(appointment.id)
-                    }
+        is HomeUiState.Error -> {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) { Text(state.message) }
+        }
+        is HomeUiState.Content -> {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp)
+            ) {
+                GreetingSection(userName = state.userName)
+                Spacer(modifier = Modifier.height(24.dp))
+                state.nextAppointment?.let { appointment ->
+                    NextAppointmentCard(
+                        appointment = appointment,
+                        onSeeDetailsClicked = { onNavigateToAppointmentDetails(appointment.id) }
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+                QuickActionsSection(
+                    onScheduleServiceClicked = onNavigateToSchedule,
+                    onServicesClicked = onNavigateToServices,
+                    onBarbersClicked = onNavigateToBarbers
                 )
                 Spacer(modifier = Modifier.height(24.dp))
-            }
-
-            // 3. Botões de Atalho
-            QuickActionsSection(
-                onScheduleServiceClicked = onNavigateToSchedule,
-                onServicesClicked = onNavigateToServices,
-                onBarbersClicked = onNavigateToBarbers
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 4. Card de Reagendamento Rápido
-            uiState.lastServiceForRebooking?.let { service ->
-                QuickRebookCard(
-                    service = service,
-                    onRebookClicked = { 
-                        // viewModel.onRebookServiceClicked(service.id)
-                        onNavigateToSchedule() // Ou uma navegação específica para reagendamento com o ID do serviço
-                    }
-                )
+                state.lastServiceForRebooking?.let { service ->
+                    QuickRebookCard(
+                        service = service,
+                        onRebookClicked = { onNavigateToSchedule() }
+                    )
+                }
             }
         }
     }
@@ -237,15 +230,6 @@ fun QuickRebookCard(service: Service, onRebookClicked: () -> Unit) {
                 Text("Agendar Novamente")
             }
         }
-    }
-}
-
-
-@Preview(showBackground = true, name = "HomeScreen Preview")
-@Composable
-fun HomeScreenPreview() {
-    MaterialTheme {
-        HomeScreen(viewModel = HomeViewModel())
     }
 }
 
