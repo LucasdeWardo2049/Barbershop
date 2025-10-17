@@ -6,12 +6,14 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
+import com.pdm.barbershop.domain.model.UserRole
 import com.pdm.barbershop.ui.feature.about.AboutScreen
 import com.pdm.barbershop.ui.feature.appointments.AppointmentsScreen
 import com.pdm.barbershop.ui.feature.barbers.BarbersScreen
 import com.pdm.barbershop.ui.feature.comanda.ComandaHistoryScreen
 import com.pdm.barbershop.ui.feature.help.HelpScreen
 import com.pdm.barbershop.ui.feature.home.HomeScreen
+import com.pdm.barbershop.ui.feature.login.LoginScreen
 import com.pdm.barbershop.ui.feature.notifications.NotificationsScreen
 import com.pdm.barbershop.ui.feature.profile.EditProfileScreen
 import com.pdm.barbershop.ui.feature.profile.ProfileScreen
@@ -22,13 +24,28 @@ import com.pdm.barbershop.ui.feature.services.ServicesScreen
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    startDestination: String = AppDestination.Home.route
+    startDestination: String = AppDestination.Home.route,
+    onLoginSuccess: (UserRole) -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     NavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier
     ) {
+        // Login
+        composable(AppDestination.Login.route) {
+            LoginScreen(onNavigate = { role ->
+                onLoginSuccess(role)
+                navController.navigate(AppDestination.Home.route) {
+                    popUpTo(AppDestination.Login.route) { inclusive = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            })
+        }
+
+        // Home
         composable(
             route = AppDestination.Home.route,
             deepLinks = listOf(
@@ -45,13 +62,17 @@ fun AppNavHost(
                 }
             )
         }
+
+        // Services
         composable(
             route = AppDestination.Services.route,
             deepLinks = listOf(
                 navDeepLink { uriPattern = "https://barbershop.app/services" },
                 navDeepLink { uriPattern = "barbershop://services" }
             )
-        ) { ServicesScreen() }
+        ) { ServicesScreen(onBackClick = { navController.popBackStack() }) }
+
+        // Barbers
         composable(
             route = AppDestination.Barbers.route,
             deepLinks = listOf(
@@ -59,6 +80,8 @@ fun AppNavHost(
                 navDeepLink { uriPattern = "barbershop://barbers" }
             )
         ) { BarbersScreen() }
+
+        // Schedule
         composable(
             route = AppDestination.Schedule.route,
             deepLinks = listOf(
@@ -67,6 +90,7 @@ fun AppNavHost(
             )
         ) { ScheduleScreen() }
 
+        // Profile and secondary
         composable(
             route = AppDestination.Profile.route,
             deepLinks = listOf(

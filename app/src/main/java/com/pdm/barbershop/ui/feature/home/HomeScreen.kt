@@ -61,7 +61,7 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
-            ) { Text(text = state.message, color = MaterialTheme.colorScheme.error) }
+            ) { Text(state.message) }
         }
         is HomeUiState.Content -> {
             Column(
@@ -71,9 +71,7 @@ fun HomeScreen(
                     .padding(16.dp)
             ) {
                 GreetingSection(userName = state.userName)
-
                 Spacer(modifier = Modifier.height(24.dp))
-
                 state.nextAppointment?.let { appointment ->
                     NextAppointmentCard(
                         appointment = appointment,
@@ -81,15 +79,12 @@ fun HomeScreen(
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                 }
-
                 QuickActionsSection(
                     onScheduleServiceClicked = onNavigateToSchedule,
                     onServicesClicked = onNavigateToServices,
                     onBarbersClicked = onNavigateToBarbers
                 )
-
                 Spacer(modifier = Modifier.height(24.dp))
-
                 state.lastServiceForRebooking?.let { service ->
                     QuickRebookCard(
                         service = service,
@@ -136,7 +131,9 @@ fun NextAppointmentCard(appointment: Appointment, onSeeDetailsClicked: () -> Uni
             OutlinedButton(
                 onClick = onSeeDetailsClicked,
                 modifier = Modifier.align(Alignment.End)
-            ) { Text("Ver Detalhes") }
+            ) {
+                Text("Ver Detalhes")
+            }
         }
     }
 }
@@ -156,7 +153,7 @@ fun QuickActionsSection(
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround
+            horizontalArrangement = Arrangement.SpaceAround // Ou Arrangement.spacedBy(8.dp)
         ) {
             QuickActionButton(
                 text = "Agendar",
@@ -186,12 +183,12 @@ fun QuickActionsSection(
 fun QuickActionButton(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Button(
         onClick = onClick,
-        modifier = modifier.height(80.dp)
+        modifier = modifier.height(80.dp) // Altura fixa para os botões de ação
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(imageVector = icon, contentDescription = text, modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text, fontSize = 12.sp)
+            Text(text, fontSize = 12.sp) // Tamanho de fonte menor para caber
         }
     }
 }
@@ -233,15 +230,6 @@ fun QuickRebookCard(service: Service, onRebookClicked: () -> Unit) {
                 Text("Agendar Novamente")
             }
         }
-    }
-}
-
-
-@Preview(showBackground = true, name = "HomeScreen Preview")
-@Composable
-fun HomeScreenPreview() {
-    MaterialTheme {
-        HomeScreen(viewModel = HomeViewModel())
     }
 }
 
