@@ -1,4 +1,4 @@
-package com.pdm.barbershop.ui.feature.login
+package com.pdm.barbershop.ui.feature.register
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,7 +20,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,13 +35,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
-import com.pdm.barbershop.domain.model.UserRole
 
 @Composable
-fun LoginScreen(
-    viewModel: LoginViewModel = hiltViewModel(),
-    onNavigate: (UserRole) -> Unit,
-    onNavigateToRegister: () -> Unit
+fun RegisterScreen(
+    viewModel: RegisterViewModel = hiltViewModel(),
+    onNavigateToLogin: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -53,8 +50,8 @@ fun LoginScreen(
             .flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
             .collect { event ->
                 when (event) {
-                    is LoginEvent.NavigateTo -> onNavigate(event.role)
-                    is LoginEvent.ShowError -> snackbarHostState.showSnackbar(event.message)
+                    is RegisterEvent.NavigateToLogin -> onNavigateToLogin()
+                    is RegisterEvent.ShowError -> snackbarHostState.showSnackbar(event.message)
                 }
             }
     }
@@ -69,6 +66,18 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            OutlinedTextField(
+                value = uiState.name,
+                onValueChange = viewModel::onNameChange,
+                label = { Text("Nome") },
+                enabled = !uiState.isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedTextField(
                 value = uiState.email,
                 onValueChange = viewModel::onEmailChange,
@@ -102,8 +111,41 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            OutlinedTextField(
+                value = uiState.confirmPassword,
+                onValueChange = viewModel::onConfirmPasswordChange,
+                label = { Text("Confirmar Senha") },
+                enabled = !uiState.isLoading,
+                visualTransformation = if (uiState.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = viewModel::togglePasswordVisibility) {
+                        Icon(
+                            imageVector = if (uiState.isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = "Toggle password visibility"
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = uiState.phone,
+                onValueChange = viewModel::onPhoneChange,
+                label = { Text("Telefone") },
+                enabled = !uiState.isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Button(
-                onClick = viewModel::onLoginClick,
+                onClick = viewModel::onRegisterClick,
                 enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -116,14 +158,8 @@ fun LoginScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Login")
+                    Text("Registrar")
                 }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            TextButton(onClick = onNavigateToRegister) {
-                Text("Não tem uma conta? Registre-se")
             }
         }
     }
@@ -131,6 +167,6 @@ fun LoginScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun LoginScreenPreview() {
-    LoginScreen(onNavigate = {}, onNavigateToRegister = {})
+fun RegisterScreenPreview() {
+    RegisterScreen(onNavigateToLogin = {})
 }

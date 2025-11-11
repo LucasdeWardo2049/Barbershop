@@ -24,6 +24,7 @@ import com.pdm.barbershop.ui.feature.login.LoginScreen
 import com.pdm.barbershop.ui.feature.notifications.NotificationsScreen
 import com.pdm.barbershop.ui.feature.profile.EditProfileScreen
 import com.pdm.barbershop.ui.feature.profile.ProfileScreen
+import com.pdm.barbershop.ui.feature.register.RegisterScreen
 import com.pdm.barbershop.ui.feature.schedule.ScheduleScreen
 import com.pdm.barbershop.ui.feature.services.ServicesScreen
 
@@ -42,17 +43,24 @@ fun AppNavHost(
         modifier = modifier
     ) {
         composable(AppDestination.Login.route) {
-            LoginScreen(onNavigate = { userRole ->
-                val route = when (userRole) {
-                    UserRole.CLIENT -> AppDestination.Home.route
-                    UserRole.BARBER -> AppDestination.BarberDashboard.route
-                    UserRole.ADMIN -> AppDestination.AdminDashboard.route
+            LoginScreen(
+                onNavigateToRegister = { navController.navigate(AppDestination.Register.route) },
+                onNavigate = { userRole ->
+                    val route = when (userRole) {
+                        UserRole.CLIENT -> AppDestination.Home.route
+                        UserRole.BARBER -> AppDestination.BarberDashboard.route
+                        UserRole.ADMIN -> AppDestination.AdminDashboard.route
+                    }
+                    onLoginSuccess(userRole) // Informa ao MainViewModel sobre o login
+                    navController.navigate(route) {
+                        popUpTo(AppDestination.Login.route) { inclusive = true }
+                    }
                 }
-                onLoginSuccess(userRole) // Informa ao MainViewModel sobre o login
-                navController.navigate(route) {
-                    popUpTo(AppDestination.Login.route) { inclusive = true }
-                }
-            })
+            )
+        }
+
+        composable(AppDestination.Register.route) {
+            RegisterScreen(onNavigateToLogin = { navController.popBackStack() })
         }
 
         // Client Flow

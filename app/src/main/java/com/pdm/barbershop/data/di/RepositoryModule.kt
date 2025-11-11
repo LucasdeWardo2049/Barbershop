@@ -1,20 +1,24 @@
 package com.pdm.barbershop.data.di
 
+import com.pdm.barbershop.data.repository.AuthRepositoryImpl
 import com.pdm.barbershop.data.repository.FakeCatalogRepository
+import com.pdm.barbershop.domain.repository.AuthRepository
 import com.pdm.barbershop.domain.repository.CatalogRepository
+import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object RepositoryModule {
+abstract class RepositoryModule {
 
-    @Provides
+    @Binds
     @Singleton
-    fun provideCatalogRepository(): CatalogRepository {
-        return FakeCatalogRepository()
-    }
+    abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCatalogRepository(impl: FakeCatalogRepository): CatalogRepository
 }

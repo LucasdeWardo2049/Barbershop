@@ -5,9 +5,10 @@ import com.pdm.barbershop.domain.model.CatalogItem
 import com.pdm.barbershop.domain.model.CatalogItemType
 import com.pdm.barbershop.domain.repository.CatalogRepository
 import kotlinx.coroutines.delay
+import javax.inject.Inject
 import kotlin.random.Random
 
-class FakeCatalogRepository : CatalogRepository {
+class FakeCatalogRepository @Inject constructor() : CatalogRepository {
 
     override suspend fun getServices(): NetworkResult<List<CatalogItem>> {
         // Simula atraso de rede/db

@@ -2,16 +2,23 @@ package com.pdm.barbershop.ui.feature.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pdm.barbershop.data.remote.AuthRequest
 import com.pdm.barbershop.domain.model.UserRole
+import com.pdm.barbershop.domain.repository.AuthRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import javax.inject.Inject
 
-class LoginViewModel : ViewModel() {
+@HiltViewModel
+class LoginViewModel @Inject constructor(
+    private val authRepository: AuthRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState = _uiState.asStateFlow()
@@ -27,27 +34,34 @@ class LoginViewModel : ViewModel() {
         _uiState.update { it.copy(password = password) }
     }
 
+    fun togglePasswordVisibility() {
+        _uiState.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
+    }
+
     fun onLoginClick() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            delay(1000) // Simula chamada de rede
 
-            val email = uiState.value.email
-            val password = uiState.value.password
+            try {
+                val email = uiState.value.email.trim()
+                val password = uiState.value.password.trim()
+                val authRequest = AuthRequest(email, password)
 
-            val role = when {
-                email == "cliente@cliente.com" && password == "cliente" -> UserRole.CLIENT
-                email == "barbeiro@barbeiro.com" && password == "barbeiro" -> UserRole.BARBER
-                email == "admin@admin.com" && password == "admin" -> UserRole.ADMIN
-                else -> null
-            }
+                val authResponse = authRepository.login(authRequest)
 
-            if (role != null) {
-                _eventChannel.send(LoginEvent.NavigateTo(role))
-            } else {
+                // TODO: Save the token securely (e.g., EncryptedSharedPreferences)
+                // TODO: Decode the token to get the user role
+                _eventChannel.send(LoginEvent.NavigateTo(UserRole.CLIENT))
+
+            } catch (e: HttpException) {
+                // Erro de HTTP, como 401 (Não autorizado) ou 404 (Não encontrado)
                 _eventChannel.send(LoginEvent.ShowError("Email ou senha inválidos"))
+            } catch (e: Exception) {
+                // Erro genérico, como falta de conexão com a internet
+                _eventChannel.send(LoginEvent.ShowError("Não foi possível conectar ao servidor"))
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
             }
-            _uiState.update { it.copy(isLoading = false) }
         }
     }
 }
@@ -55,5 +69,6 @@ class LoginViewModel : ViewModel() {
 data class LoginUiState(
     val email: String = "",
     val password: String = "",
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val isPasswordVisible: Boolean = false
 )
