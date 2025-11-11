@@ -4,6 +4,8 @@ import com.pdm.barbershop.domain.model.User
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
 
 interface AuthApiService {
     @POST("auth/login")
@@ -14,4 +16,10 @@ interface AuthApiService {
 
     @GET("me")
     suspend fun getMe(): User
+
+    @PUT("users/{id}")
+    suspend fun updateUser(
+        @Path("id") userId: String,
+        @Body request: UpdateUserRequest
+    ): User
 }

@@ -1,30 +1,46 @@
 package com.pdm.barbershop.ui.feature.profile
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pdm.barbershop.data.remote.UpdateUserRequest
+import com.pdm.barbershop.domain.repository.AuthRepository
 import com.pdm.barbershop.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+sealed class EditProfileEvent {
+    data object SaveSuccess : EditProfileEvent()
+    data class ShowError(val message: String) : EditProfileEvent()
+}
 
 data class EditProfileUiState(
     val name: String = "",
     val email: String = "",
     val phone: String = "",
     val isLoading: Boolean = false,
-    val error: String? = null
 )
 
 @HiltViewModel
 class EditProfileViewModel @Inject constructor(
+    private val authRepository: AuthRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(EditProfileUiState())
     val uiState = _uiState.asStateFlow()
+
+    private val _eventChannel = Channel<EditProfileEvent>()
+    val events = _eventChannel.receiveAsFlow()
+
+    private val TAG = "EditProfileViewModel"
 
     init {
         loadCurrentUser()
@@ -32,7 +48,7 @@ class EditProfileViewModel @Inject constructor(
 
     private fun loadCurrentUser() {
         viewModelScope.launch {
-            val user = userRepository.currentUser.first() // Pega o valor atual do cache
+            val user = userRepository.currentUser.first()
             _uiState.update {
                 it.copy(
                     name = user?.name ?: "",
@@ -57,8 +73,44 @@ class EditProfileViewModel @Inject constructor(
 
     fun saveChanges() {
         viewModelScope.launch {
-            // TODO: Implementar a lógica para salvar os dados no backend/banco de dados
-            println("Salvando dados: ${_uiState.value}")
+            Log.d(TAG, "saveChanges() foi chamado.")
+            _uiState.update { it.copy(isLoading = true) }
+
+            val currentUser = userRepository.currentUser.value
+            Log.d(TAG, "Verificando currentUser: $currentUser")
+
+            if (currentUser == null) {
+                Log.e(TAG, "Erro Crítico: currentUser está nulo. A atualização não pode prosseguir.")
+                _eventChannel.send(EditProfileEvent.ShowError("Usuário não encontrado. Tente novamente."))
+                _uiState.update { it.copy(isLoading = false) }
+                return@launch
+            }
+
+            try {
+                val request = UpdateUserRequest(
+                    name = uiState.value.name.trim(),
+                    email = uiState.value.email.trim(),
+                    phone = uiState.value.phone.trim(),
+                    role = currentUser.role // Adicionado
+                )
+                Log.d(TAG, "Enviando requisição de atualização para o usuário ${currentUser.userId} com o corpo: $request")
+
+                authRepository.updateUser(currentUser.userId, request)
+                Log.d(TAG, "Update bem-sucedido na API. Buscando usuário atualizado...")
+
+                // Força a atualização do cache e espera a conclusão
+                val fetchJob: Job = launch { userRepository.fetchUser() }
+                fetchJob.join() // Espera a busca do usuário terminar
+
+                Log.d(TAG, "Cache do usuário atualizado. Enviando evento de sucesso.")
+                _eventChannel.send(EditProfileEvent.SaveSuccess)
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Falha ao salvar alterações.", e)
+                _eventChannel.send(EditProfileEvent.ShowError(e.message ?: "Erro desconhecido ao salvar"))
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
+            }
         }
     }
 }

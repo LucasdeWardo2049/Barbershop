@@ -4,6 +4,7 @@ import android.util.Log
 import com.pdm.barbershop.domain.model.User
 import com.pdm.barbershop.domain.repository.AuthRepository
 import com.pdm.barbershop.domain.repository.UserRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,8 +25,12 @@ class UserRepositoryImpl @Inject constructor(
             val user = authRepository.getMe()
             _currentUser.value = user
             Log.d("UserRepository", "Usuário buscado com sucesso: ${user.name}")
+        } catch (e: CancellationException) {
+            // Re-lança exceções de cancelamento. Elas são parte do ciclo de vida normal da corrotina
+            // e não devem ser tratadas como um erro que limpa o usuário.
+            throw e
         } catch (e: Exception) {
-            // Em caso de erro, garante que o usuário seja nulo
+            // Para qualquer outra exceção (rede, 4xx, 5xx), nós registramos e limpamos o usuário.
             Log.e("UserRepository", "Falha ao buscar usuário", e)
             _currentUser.value = null
         }
