@@ -54,7 +54,9 @@
      - O Android Studio deve sincronizar o projeto automaticamente. Se não, clique no ícone de elefante do Gradle com uma seta para sincronizar.
  4.  **Execute o aplicativo**:
      - Selecione um emulador ou dispositivo físico e clique no botão de "Run".
-​#Login
+​ 
+## Login
+
 Login: cliente@cliente.com (perfil cliente)
 Senha: cliente
 
