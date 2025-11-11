@@ -2,17 +2,27 @@ package com.pdm.barbershop.ui.feature.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pdm.barbershop.domain.repository.UserRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class EditProfileUiState(
     val name: String = "",
     val email: String = "",
-    val phone: String = ""
+    val phone: String = "",
+    val isLoading: Boolean = false,
+    val error: String? = null
 )
 
-class EditProfileViewModel : ViewModel() {
+@HiltViewModel
+class EditProfileViewModel @Inject constructor(
+    private val userRepository: UserRepository
+) : ViewModel() {
     private val _uiState = MutableStateFlow(EditProfileUiState())
     val uiState = _uiState.asStateFlow()
 
@@ -21,24 +31,28 @@ class EditProfileViewModel : ViewModel() {
     }
 
     private fun loadCurrentUser() {
-        // Simula o carregamento dos dados atuais do usuário
-        _uiState.value = EditProfileUiState(
-            name = "Eduardo",
-            email = "eduardo.dev@example.com",
-            phone = "(99) 99999-9999"
-        )
+        viewModelScope.launch {
+            val user = userRepository.currentUser.first() // Pega o valor atual do cache
+            _uiState.update {
+                it.copy(
+                    name = user?.name ?: "",
+                    email = user?.email ?: "",
+                    phone = user?.phone ?: ""
+                )
+            }
+        }
     }
 
     fun onNameChange(newName: String) {
-        _uiState.value = _uiState.value.copy(name = newName)
+        _uiState.update { it.copy(name = newName) }
     }
 
     fun onEmailChange(newEmail: String) {
-        _uiState.value = _uiState.value.copy(email = newEmail)
+        _uiState.update { it.copy(email = newEmail) }
     }
 
     fun onPhoneChange(newPhone: String) {
-        _uiState.value = _uiState.value.copy(phone = newPhone)
+        _uiState.update { it.copy(phone = newPhone) }
     }
 
     fun saveChanges() {

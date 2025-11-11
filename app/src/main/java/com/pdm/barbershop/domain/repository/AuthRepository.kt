@@ -8,4 +8,5 @@ import com.pdm.barbershop.domain.model.User
 interface AuthRepository {
     suspend fun login(authRequest: AuthRequest): AuthResponse
     suspend fun register(registerRequest: RegisterRequest): User
+    suspend fun getMe(): User
 }

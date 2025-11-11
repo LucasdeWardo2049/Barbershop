@@ -19,4 +19,8 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun register(registerRequest: RegisterRequest): User {
         return apiService.register(registerRequest)
     }
+
+    override suspend fun getMe(): User {
+        return apiService.getMe()
+    }
 }

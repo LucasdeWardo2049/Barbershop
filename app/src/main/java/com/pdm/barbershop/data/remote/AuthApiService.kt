@@ -2,6 +2,7 @@ package com.pdm.barbershop.data.remote
 
 import com.pdm.barbershop.domain.model.User
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
 
 interface AuthApiService {
@@ -10,4 +11,7 @@ interface AuthApiService {
 
     @POST("auth/register")
     suspend fun register(@Body request: RegisterRequest): User
+
+    @GET("me")
+    suspend fun getMe(): User
 }

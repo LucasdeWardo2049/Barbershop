@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.pdm.barbershop.data.remote.AuthRequest
 import com.pdm.barbershop.domain.model.UserRole
 import com.pdm.barbershop.domain.repository.AuthRepository
+import com.pdm.barbershop.domain.repository.TokenRepository
+import com.pdm.barbershop.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +19,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val tokenRepository: TokenRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -48,16 +52,17 @@ class LoginViewModel @Inject constructor(
                 val authRequest = AuthRequest(email, password)
 
                 val authResponse = authRepository.login(authRequest)
+                tokenRepository.saveToken(authResponse.token)
 
-                // TODO: Save the token securely (e.g., EncryptedSharedPreferences)
+                // Busca e armazena os dados do usuário
+                userRepository.fetchUser()
+
                 // TODO: Decode the token to get the user role
                 _eventChannel.send(LoginEvent.NavigateTo(UserRole.CLIENT))
 
             } catch (e: HttpException) {
-                // Erro de HTTP, como 401 (Não autorizado) ou 404 (Não encontrado)
                 _eventChannel.send(LoginEvent.ShowError("Email ou senha inválidos"))
             } catch (e: Exception) {
-                // Erro genérico, como falta de conexão com a internet
                 _eventChannel.send(LoginEvent.ShowError("Não foi possível conectar ao servidor"))
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
