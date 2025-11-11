@@ -1,5 +1,7 @@
 package com.pdm.barbershop.ui
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -20,6 +22,7 @@ import com.pdm.barbershop.navegation.AppNavHost
 import com.pdm.barbershop.ui.components.CustomBottomBar
 
 @OptIn(ExperimentalMaterial3Api::class)
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppScaffold(
     mainViewModel: MainViewModel = viewModel()
@@ -31,7 +34,6 @@ fun AppScaffold(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
-    // Bottom nav items só quando o usuário está autenticado
     val bottomNavItems = when (userRole) {
         UserRole.CLIENT -> AppDestination.clientBottomNav
         UserRole.BARBER -> AppDestination.barberBottomNav
@@ -42,14 +44,12 @@ fun AppScaffold(
     val currentDestination = AppDestination.fromRoute(currentRoute)
     val shouldShowBars = currentDestination in bottomNavItems
 
-    val startDestination = if (userRole == null) AppDestination.Login.route else AppDestination.Home.route
-
     Scaffold(
         topBar = {
             if (shouldShowBars) {
                 CenterAlignedTopAppBar(
                     title = { Text(text = currentDestination?.title ?: "") },
-                    colors = TopAppBarDefaults.topAppBarColors(
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         titleContentColor = MaterialTheme.colorScheme.onPrimary
                     )
@@ -68,7 +68,6 @@ fun AppScaffold(
         AppNavHost(
             navController = navController,
             modifier = Modifier.padding(innerPadding),
-            startDestination = startDestination,
             onLoginSuccess = mainViewModel::onLoginSuccess,
             onLogout = mainViewModel::onLogout
         )

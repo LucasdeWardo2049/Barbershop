@@ -1,174 +1,208 @@
 package com.pdm.barbershop.ui.feature.schedule
 
-import android.annotation.SuppressLint
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pdm.barbershop.domain.model.Barber
 import com.pdm.barbershop.domain.model.Service
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.LocalDate
-import java.util.*
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
-@SuppressLint("NewApi")
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ScheduleScreen(
     viewModel: ScheduleViewModel = viewModel()
 ) {
-    // Consumimos apenas o conteúdo consolidado para evitar problemas de pattern matching
-    val uiState by viewModel.content.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        // Passo 1: Serviço
-        SchedulingStep(title = "1. Escolha o serviço") {
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(vertical = 8.dp)
-            ) {
-                items(uiState.services.size) { index ->
-                    val service = uiState.services[index]
-                    ServiceChip(
-                        service = service,
-                        isSelected = service == uiState.selectedService,
-                        onServiceSelected = { viewModel.onServiceSelected(service) }
-                    )
-                }
+    LaunchedEffect(uiState.scheduleSuccess) {
+        if (uiState.scheduleSuccess) {
+            scope.launch {
+                snackbarHostState.showSnackbar("Agendamento confirmado com sucesso!")
+                viewModel.onScheduleConfirmedShown()
             }
         }
+    }
 
-        // Passo 2: Barbeiro
-        AnimatedVisibility(
-            visible = uiState.selectedService != null,
-            enter = fadeIn(),
-            exit = fadeOut()
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .verticalScroll(rememberScrollState())
+                .padding(padding)
+                .padding(16.dp)
         ) {
-            SchedulingStep(title = "2. Escolha o profissional") {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(vertical = 8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(uiState.barbers.size) { index ->
-                        val barber = uiState.barbers[index]
-                        BarberItem(
-                            barber = barber,
-                            isSelected = barber == uiState.selectedBarber,
-                            onBarberSelected = { viewModel.onBarberSelected(barber) }
-                        )
-                    }
-                }
-            }
-        }
-
-        // Passo 3: Data e Horário
-        AnimatedVisibility(
-            visible = uiState.selectedBarber != null,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
-            SchedulingStep(title = "3. Escolha a data e o horário") {
-                // Datas
+            SchedulingStep(title = "1. Escolha o serviço") {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    items(uiState.availableDates.size) { index ->
-                        val date = uiState.availableDates[index]
-                        DateChip(
-                            date = date,
-                            isSelected = date == uiState.selectedDate,
-                            onDateSelected = { viewModel.onDateSelected(date) }
+                    items(uiState.services) { service ->
+                        ServiceChip(
+                            service = service,
+                            isSelected = service == uiState.selectedService,
+                            onServiceSelected = { viewModel.onServiceSelected(service) }
                         )
                     }
                 }
+            }
 
-                // Horários
-                when {
-                    uiState.isLoadingTimeSlots -> {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+            AnimatedVisibility(
+                visible = uiState.selectedService != null,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                SchedulingStep(title = "2. Escolha o profissional") {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(vertical = 8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(uiState.barbers) { barber ->
+                            BarberItem(
+                                barber = barber,
+                                isSelected = barber == uiState.selectedBarber,
+                                onBarberSelected = { viewModel.onBarberSelected(barber) }
+                            )
+                        }
                     }
-                    uiState.selectedDate != null && uiState.availableTimeSlots.isEmpty() -> {
-                        Text(
-                            "Nenhum horário disponível para esta data.",
-                            modifier = Modifier.padding(16.dp)
-                        )
+                }
+            }
+
+            AnimatedVisibility(
+                visible = uiState.selectedBarber != null,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                SchedulingStep(title = "3. Escolha a data e o horário") {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(vertical = 8.dp)
+                    ) {
+                        items(uiState.availableDates) { date ->
+                            DateChip(
+                                date = date,
+                                isSelected = date == uiState.selectedDate,
+                                onDateSelected = { viewModel.onDateSelected(date) }
+                            )
+                        }
                     }
-                    uiState.availableTimeSlots.isNotEmpty() -> {
-                        LazyVerticalGrid(
-                            columns = GridCells.Adaptive(minSize = 80.dp),
-                            modifier = Modifier
-                                .padding(top = 16.dp)
-                                .heightIn(min = 100.dp, max = 220.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(uiState.availableTimeSlots.size) { index ->
-                                val time = uiState.availableTimeSlots[index]
-                                TimeSlotChip(
-                                    time = time,
-                                    isSelected = time == uiState.selectedTime,
-                                    onTimeSelected = { viewModel.onTimeSelected(time) }
-                                )
+
+                    when {
+                        uiState.isLoadingTimeSlots -> {
+                            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                        }
+                        uiState.selectedDate != null && uiState.availableTimeSlots.isEmpty() -> {
+                            Text(
+                                "Nenhum horário disponível para esta data.",
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
+                        uiState.availableTimeSlots.isNotEmpty() -> {
+                            LazyVerticalGrid(
+                                columns = GridCells.Adaptive(minSize = 80.dp),
+                                modifier = Modifier
+                                    .padding(top = 16.dp)
+                                    .heightIn(min = 100.dp, max = 220.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(uiState.availableTimeSlots) { time ->
+                                    TimeSlotChip(
+                                        time = time,
+                                        isSelected = time == uiState.selectedTime,
+                                        onTimeSelected = { viewModel.onTimeSelected(time) }
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Resumo
-        AnimatedVisibility(
-            visible = uiState.isConfirmationButtonEnabled,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
-            AppointmentSummaryCard(uiState = uiState)
-        }
+            AnimatedVisibility(
+                visible = uiState.isConfirmationButtonEnabled,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                AppointmentSummaryCard(uiState = uiState)
+            }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Botão de confirmação
-        Button(
-            onClick = { /* TODO: Confirmar agendamento */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-                .semantics { contentDescription = "Confirmar agendamento" },
-            enabled = uiState.isConfirmationButtonEnabled,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
-        ) {
-            Text("Confirmar Agendamento", fontSize = 16.sp)
+            Button(
+                onClick = { viewModel.onScheduleClick() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                enabled = uiState.isConfirmationButtonEnabled,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text("Confirmar Agendamento", fontSize = 16.sp)
+            }
         }
     }
 }
@@ -178,19 +212,18 @@ fun TimeSlotChip(time: String, isSelected: Boolean, onTimeSelected: () -> Unit) 
     BaseChip(
         label = time,
         isSelected = isSelected,
-        onClick = onTimeSelected,
-        modifier = Modifier.semantics { contentDescription = "Horário $time" }
+        onClick = onTimeSelected
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DateChip(date: LocalDate, isSelected: Boolean, onDateSelected: () -> Unit) {
-    val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM")
+    val formatter = DateTimeFormatter.ofPattern("dd/MM")
     BaseChip(
         label = date.format(formatter),
         isSelected = isSelected,
-        onClick = onDateSelected,
-        modifier = Modifier.semantics { contentDescription = "Data ${date.format(formatter)}" }
+        onClick = onDateSelected
     )
 }
 
@@ -204,13 +237,12 @@ fun ServiceChip(service: Service, isSelected: Boolean, onServiceSelected: () -> 
             containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
             labelColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
         ),
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.semantics { contentDescription = "Serviço ${service.name}" }
+        shape = RoundedCornerShape(12.dp)
     )
 }
 
 @Composable
-fun BaseChip(label: String, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun BaseChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
     AssistChip(
         onClick = onClick,
         label = { Text(label) },
@@ -218,8 +250,7 @@ fun BaseChip(label: String, isSelected: Boolean, onClick: () -> Unit, modifier: 
             containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
             labelColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
         ),
-        shape = RoundedCornerShape(12.dp),
-        modifier = modifier
+        shape = RoundedCornerShape(12.dp)
     )
 }
 
@@ -229,14 +260,13 @@ fun BarberItem(barber: Barber, isSelected: Boolean, onBarberSelected: () -> Unit
         modifier = Modifier
             .width(120.dp)
             .height(140.dp)
-            .clickable { onBarberSelected() }
-            .semantics { contentDescription = "Profissional ${barber.name}" },
+            .clickable { onBarberSelected() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
         )
     ) {
-        Box(contentAlignment = androidx.compose.ui.Alignment.Center, modifier = Modifier.fillMaxSize()) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             Text(
                 barber.name,
                 style = MaterialTheme.typography.bodyMedium,
@@ -266,10 +296,11 @@ fun SchedulingStep(title: String, content: @Composable () -> Unit) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppointmentSummaryCard(uiState: ScheduleUiState) {
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.getDefault())
-    val dateFormatter = java.time.format.DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale.forLanguageTag("pt-BR"))
+    val dateFormatter = DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale("pt", "BR"))
 
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
