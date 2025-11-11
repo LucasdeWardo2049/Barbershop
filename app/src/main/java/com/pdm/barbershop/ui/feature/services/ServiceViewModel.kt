@@ -1,23 +1,24 @@
 package com.pdm.barbershop.ui.feature.services
 
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pdm.barbershop.data.repository.FakeCatalogRepository
-import com.pdm.barbershop.domain.repository.CatalogRepository
+import com.pdm.barbershop.data.core.NetworkResult
 import com.pdm.barbershop.domain.usecase.GetProductsUseCase
 import com.pdm.barbershop.domain.usecase.GetServicesUseCase
-import kotlinx.coroutines.Dispatchers
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class ServicesViewModel(
-    repository: CatalogRepository = FakeCatalogRepository(),
-    private val getServices: GetServicesUseCase = GetServicesUseCase(repository),
-    private val getProducts: GetProductsUseCase = GetProductsUseCase(repository)
+@HiltViewModel
+class ServicesViewModel @Inject constructor(
+    private val getServices: GetServicesUseCase,
+    private val getProducts: GetProductsUseCase
 ) : ViewModel() {
 
-    private val _state = androidx.compose.runtime.mutableStateOf(ServicesUiState())
-    val state: androidx.compose.runtime.State<ServicesUiState> = _state
+    private val _state = mutableStateOf(ServicesUiState())
+    val state: State<ServicesUiState> = _state
 
     init {
         refresh()
@@ -26,17 +27,20 @@ class ServicesViewModel(
     fun refresh() {
         _state.value = _state.value.copy(isLoading = true, error = null)
         viewModelScope.launch {
-            try {
-                val services = withContext(Dispatchers.Default) { getServices() }
-                val products = withContext(Dispatchers.Default) { getProducts() }
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    services = services,
-                    products = products
-                )
-            } catch (t: Throwable) {
-                _state.value = _state.value.copy(isLoading = false, error = t.message)
-            }
+            val servicesResult = getServices()
+            val productsResult = getProducts()
+
+            val services = if (servicesResult is NetworkResult.Success) servicesResult.data else emptyList()
+            val products = if (productsResult is NetworkResult.Success) productsResult.data else emptyList()
+
+            val error = if (servicesResult is NetworkResult.Error) servicesResult.message else if (productsResult is NetworkResult.Error) productsResult.message else null
+
+            _state.value = _state.value.copy(
+                isLoading = false,
+                services = services,
+                products = products,
+                error = error
+            )
         }
     }
 

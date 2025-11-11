@@ -27,10 +27,12 @@ class ProfileViewModel : ViewModel() {
     private fun fetchUserData() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            kotlinx.coroutines.delay(1000)
+            kotlinx.coroutines.delay(1000) // Simula o carregamento
             _uiState.value = _uiState.value.copy(
                 userName = "Eduardo",
                 userEmail = "eduardo.dev@example.com",
+                // Adiciona uma imagem de perfil de exemplo
+                profileImageUri = Uri.parse("https://picsum.photos/seed/profile/200"),
                 isLoading = false
             )
         }

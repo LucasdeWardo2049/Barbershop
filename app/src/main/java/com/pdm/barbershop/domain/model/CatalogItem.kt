@@ -7,6 +7,7 @@ data class CatalogItem(
     val name: String,
     val description: String,
     val price: Double,
+    val imageUrl: String? = null, // Adicionado para o Coil
     val durationMinutes: Int? = null,
     val type: CatalogItemType
 )
