@@ -1,5 +1,3 @@
-# Barbershop
- App para gerenciamento de barbearia usando jetpack compose + MVVM 
  # Barbershop App
 ​
  ![Static Badge](https://img.shields.io/badge/platform-android-green)
