@@ -1,52 +1,53 @@
 package com.pdm.barbershop.ui.feature.profile
 
 import android.net.Uri
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.pdm.barbershop.domain.repository.TokenRepository
+import com.pdm.barbershop.domain.repository.UserRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class ProfileUiState(
     val userName: String = "",
     val userEmail: String = "",
-    val profileImageUri: Uri? = null,
-    val isLoading: Boolean = false,
-    val error: String? = null
+    val profileImageUri: Uri? = null
 )
 
-class ProfileViewModel : ViewModel() {
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val userRepository: UserRepository,
+    private val tokenRepository: TokenRepository
+) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ProfileUiState())
-    val uiState: StateFlow<ProfileUiState> = _uiState
-
-    init {
-        fetchUserData()
-    }
-
-    private fun fetchUserData() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            kotlinx.coroutines.delay(1000) // Simula o carregamento
-            _uiState.value = _uiState.value.copy(
-                userName = "Eduardo",
-                userEmail = "eduardo.dev@example.com",
-                // Adiciona uma imagem de perfil de exemplo
-                profileImageUri = Uri.parse("https://picsum.photos/seed/profile/200"),
-                isLoading = false
+    val uiState: StateFlow<ProfileUiState> = userRepository.currentUser
+        .map { user ->
+            ProfileUiState(
+                userName = user?.name ?: "",
+                userEmail = user?.email ?: "",
+                profileImageUri = user?.avatarUrl?.toUri()
             )
         }
-    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ProfileUiState()
+        )
 
     fun onProfileImageChanged(uri: Uri?) {
-        _uiState.value = _uiState.value.copy(profileImageUri = uri)
         // TODO: Implementar upload da imagem para o servidor futuramente
     }
 
     fun logout() {
         viewModelScope.launch {
-            // TODO: Limpar sessão, tokens, etc.
-            _uiState.value = ProfileUiState() // Reseta estado
+            userRepository.clearUser()
+            tokenRepository.clearToken()
         }
     }
 }

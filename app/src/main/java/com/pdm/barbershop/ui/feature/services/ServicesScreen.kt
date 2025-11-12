@@ -14,14 +14,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.pdm.barbershop.domain.model.CatalogItem
 import com.pdm.barbershop.ui.feature.services.components.ServiceCard
 import com.pdm.barbershop.ui.feature.services.components.ServicesSegmentedControl
 
 @Composable
 fun ServicesScreen(
-    viewModel: ServicesViewModel = viewModel()
+    viewModel: ServicesViewModel = hiltViewModel()
 ) {
     val state by viewModel.state
 

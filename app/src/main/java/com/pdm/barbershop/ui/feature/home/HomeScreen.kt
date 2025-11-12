@@ -34,13 +34,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.pdm.barbershop.domain.model.Appointment
 import com.pdm.barbershop.domain.model.Service
+import com.pdm.barbershop.domain.repository.AuthRepository
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = viewModel(),
+    viewModel: HomeViewModel = hiltViewModel(),
     onNavigateToSchedule: () -> Unit = {},
     onNavigateToServices: () -> Unit = {},
     onNavigateToBarbers: () -> Unit = {},
@@ -48,72 +49,61 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    if (uiState.isLoading) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            CircularProgressIndicator()
-        }
-    } else {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()) // Para permitir rolagem se o conteúdo for grande
-                .padding(16.dp)
-        ) {
-            // 1. Saudação
-            GreetingSection(userName = uiState.userName)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
+        // 1. Saudação
+        GreetingSection(userName = uiState.userName)
 
-            Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-            // 2. Card do Próximo Agendamento
-            uiState.nextAppointment?.let { appointment ->
-                NextAppointmentCard(
-                    appointment = appointment,
-                    onSeeDetailsClicked = { 
-                        // viewModel.onSeeDetailsClicked(appointment.id) 
-                        onNavigateToAppointmentDetails(appointment.id)
-                    }
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+        // 2. Card do Próximo Agendamento
+        NextAppointmentCard(
+            appointment = uiState.nextAppointment,
+            onSeeDetailsClicked = { appointmentId ->
+                onNavigateToAppointmentDetails(appointmentId)
+            },
+            onScheduleClicked = onNavigateToSchedule
+        )
 
-            // 3. Botões de Atalho
-            QuickActionsSection(
-                onScheduleServiceClicked = onNavigateToSchedule,
-                onServicesClicked = onNavigateToServices,
-                onBarbersClicked = onNavigateToBarbers
-            )
+        Spacer(modifier = Modifier.height(24.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
+        // 3. Botões de Atalho
+        QuickActionsSection(
+            onScheduleServiceClicked = onNavigateToSchedule,
+            onServicesClicked = onNavigateToServices,
+            onBarbersClicked = onNavigateToBarbers
+        )
 
-            // 4. Card de Reagendamento Rápido
-            uiState.lastServiceForRebooking?.let { service ->
-                QuickRebookCard(
-                    service = service,
-                    onRebookClicked = { 
-                        // viewModel.onRebookServiceClicked(service.id)
-                        onNavigateToSchedule() // Ou uma navegação específica para reagendamento com o ID do serviço
-                    }
-                )
-            }
-        }
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // 4. Card de Reagendamento Rápido
+        QuickRebookCard(
+            service = uiState.lastServiceForRebooking,
+            onRebookClicked = onNavigateToSchedule
+        )
     }
 }
 
 @Composable
 fun GreetingSection(userName: String) {
+    val name = if (userName.isNotBlank()) userName else "Visitante"
     Text(
-        text = "Olá, $userName",
+        text = "Olá, $name",
         style = MaterialTheme.typography.headlineMedium,
         color = MaterialTheme.colorScheme.onSurface
     )
 }
 
 @Composable
-fun NextAppointmentCard(appointment: Appointment, onSeeDetailsClicked: () -> Unit) {
+fun NextAppointmentCard(
+    appointment: Appointment?,
+    onSeeDetailsClicked: (String) -> Unit,
+    onScheduleClicked: () -> Unit
+) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -124,22 +114,38 @@ fun NextAppointmentCard(appointment: Appointment, onSeeDetailsClicked: () -> Uni
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "${appointment.serviceName} - ${appointment.date} às ${appointment.time}",
-                style = MaterialTheme.typography.bodyLarge
-            )
-            Text(
-                text = "Com ${appointment.barberName}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
             Spacer(modifier = Modifier.height(12.dp))
-            OutlinedButton(
-                onClick = onSeeDetailsClicked,
-                modifier = Modifier.align(Alignment.End)
-            ) {
-                Text("Ver Detalhes")
+
+            if (appointment != null) {
+                Text(
+                    text = "${appointment.serviceName} - ${appointment.date} às ${appointment.time}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = "Com ${appointment.barberName}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = { onSeeDetailsClicked(appointment.id) },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Ver Detalhes")
+                }
+            } else {
+                Text(
+                    text = "Você não possui agendamentos.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = onScheduleClicked,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Agendar um horário")
+                }
             }
         }
     }
@@ -160,7 +166,7 @@ fun QuickActionsSection(
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround // Ou Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.SpaceAround
         ) {
             QuickActionButton(
                 text = "Agendar",
@@ -190,18 +196,18 @@ fun QuickActionsSection(
 fun QuickActionButton(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Button(
         onClick = onClick,
-        modifier = modifier.height(80.dp) // Altura fixa para os botões de ação
+        modifier = modifier.height(80.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(imageVector = icon, contentDescription = text, modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text, fontSize = 12.sp) // Tamanho de fonte menor para caber
+            Text(text, fontSize = 12.sp)
         }
     }
 }
 
 @Composable
-fun QuickRebookCard(service: Service, onRebookClicked: () -> Unit) {
+fun QuickRebookCard(service: Service?, onRebookClicked: () -> Unit) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -212,61 +218,39 @@ fun QuickRebookCard(service: Service, onRebookClicked: () -> Unit) {
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = service.icon,
-                    contentDescription = service.name,
-                    modifier = Modifier.size(32.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.size(12.dp))
-                Text(
-                    text = service.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.weight(1f)
-                )
-            }
             Spacer(modifier = Modifier.height(12.dp))
-            Button( // Mudado para Button normal para mais destaque
-                onClick = onRebookClicked,
-                modifier = Modifier.align(Alignment.End)
-            ) {
-                Icon(Icons.Filled.Repeat, contentDescription = "Reagendar", modifier = Modifier.size(18.dp))
-                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Text("Agendar Novamente")
+
+            if (service != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = service.icon,
+                        contentDescription = service.name,
+                        modifier = Modifier.size(32.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.size(12.dp))
+                    Text(
+                        text = service.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = onRebookClicked,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Icon(Icons.Filled.Repeat, contentDescription = "Reagendar", modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Text("Agendar Novamente")
+                }
+            } else {
+                Text(
+                    text = "Nenhum serviço recente para reagendar.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
-    }
-}
-
-
-@Preview(showBackground = true, name = "HomeScreen Preview")
-@Composable
-fun HomeScreenPreview() {
-    MaterialTheme {
-        HomeScreen(viewModel = HomeViewModel())
-    }
-}
-
-@Preview(showBackground = true, name = "Next Appointment Card Preview")
-@Composable
-fun NextAppointmentCardPreview() {
-    MaterialTheme {
-        NextAppointmentCard(
-            appointment = Appointment("1", "24/09", "15:00", "Corte + Barba", "Fernando Silva", "Confirmado"),
-            onSeeDetailsClicked = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Quick Rebook Card Preview")
-@Composable
-fun QuickRebookCardPreview() {
-    MaterialTheme {
-        QuickRebookCard(
-            service = Service("s1", "Corte Masculino", 50.0, 45, Icons.Filled.ContentCut),
-            onRebookClicked = {}
-        )
     }
 }

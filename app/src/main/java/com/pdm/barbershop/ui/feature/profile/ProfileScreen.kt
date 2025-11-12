@@ -28,13 +28,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.pdm.barbershop.ui.theme.BarbershopTheme
 
 @Composable
 fun ProfileScreen(
-    viewModel: ProfileViewModel = viewModel(),
+    viewModel: ProfileViewModel = hiltViewModel(),
     onEditProfileClick: () -> Unit,
     onAppointmentsClick: () -> Unit,
     onComandasClick: () -> Unit,
@@ -99,7 +99,10 @@ fun ProfileScreen(
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
                 ProfileMenuItem(icon = Icons.Default.Info, text = "Sobre o App", onClick = onAboutClick)
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
-                ProfileMenuItem(icon = Icons.AutoMirrored.Filled.ExitToApp, text = "Sair", isLogout = true, onClick = onLogoutClick)
+                ProfileMenuItem(icon = Icons.AutoMirrored.Filled.ExitToApp, text = "Sair", isLogout = true, onClick = {
+                    viewModel.logout()
+                    onLogoutClick()
+                })
             }
         }
     }

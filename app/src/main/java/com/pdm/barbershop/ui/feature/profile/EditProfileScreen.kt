@@ -29,13 +29,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.pdm.barbershop.ui.theme.BarbershopTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
-    viewModel: EditProfileViewModel = viewModel(),
+    viewModel: EditProfileViewModel = hiltViewModel(),
     onSave: () -> Unit,
     onCancel: () -> Unit
 ) {

@@ -15,6 +15,7 @@ sealed class AppDestination(
 ) {
     // Common
     data object Login : AppDestination("login", R.string.nav_login, Icons.Outlined.Lock, "Login")
+    data object Register : AppDestination("register", R.string.nav_register, Icons.Outlined.PersonAdd, "Registrar") // Adicionado
     data object Profile : AppDestination("profile", R.string.nav_profile, Icons.Outlined.AccountCircle, "Perfil")
     data object EditProfile : AppDestination("edit_profile", R.string.nav_edit_profile, Icons.Default.Edit, "Editar Perfil")
     data object Notifications : AppDestination("notifications", R.string.nav_notifications, Icons.Outlined.Notifications, "Notificações")
@@ -42,7 +43,7 @@ sealed class AppDestination(
 
     companion object {
         private val allDestinations = listOf(
-            Login, Profile, EditProfile, Notifications, Help, About, Logout,
+            Login, Register, Profile, EditProfile, Notifications, Help, About, Logout, // Adicionado Register
             Home, Services, Barbers, Schedule, Appointments, ComandaHistory,
             BarberDashboard, BarberSchedule, BarberReports,
             AdminDashboard, AdminUsers, AdminReports
