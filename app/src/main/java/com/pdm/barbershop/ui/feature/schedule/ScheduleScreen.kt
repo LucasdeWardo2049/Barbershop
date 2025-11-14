@@ -29,7 +29,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -48,14 +47,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pdm.barbershop.domain.model.Barber
 import com.pdm.barbershop.domain.model.Service
+import com.pdm.barbershop.util.DateTimeUtils
+import java.time.ZoneId
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.LocalDate
@@ -65,17 +66,17 @@ import java.util.Locale
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ScheduleScreen(
-    viewModel: ScheduleViewModel = viewModel()
+    viewModel: ScheduleViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.ui.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(uiState.scheduleSuccess) {
-        if (uiState.scheduleSuccess) {
+    LaunchedEffect(uiState.bookingSuccess) {
+        if (uiState.bookingSuccess) {
             scope.launch {
                 snackbarHostState.showSnackbar("Agendamento confirmado com sucesso!")
-                viewModel.onScheduleConfirmedShown()
+                viewModel.consumeBookingSuccess()
             }
         }
     }
@@ -91,16 +92,20 @@ fun ScheduleScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
+            uiState.errorMessage?.let { err ->
+                Text(err, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
+            }
+
             SchedulingStep(title = "1. Escolha o serviço") {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    items(uiState.services) { service ->
+                    items(uiState.services) { service: Service ->
                         ServiceChip(
                             service = service,
                             isSelected = service == uiState.selectedService,
-                            onServiceSelected = { viewModel.onServiceSelected(service) }
+                            onServiceSelected = { viewModel.selectService(service) }
                         )
                     }
                 }
@@ -117,11 +122,11 @@ fun ScheduleScreen(
                         contentPadding = PaddingValues(vertical = 8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(uiState.barbers) { barber ->
+                        items(uiState.barbers) { barber: Barber ->
                             BarberItem(
                                 barber = barber,
                                 isSelected = barber == uiState.selectedBarber,
-                                onBarberSelected = { viewModel.onBarberSelected(barber) }
+                                onBarberSelected = { viewModel.selectBarber(barber) }
                             )
                         }
                     }
@@ -138,26 +143,26 @@ fun ScheduleScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         contentPadding = PaddingValues(vertical = 8.dp)
                     ) {
-                        items(uiState.availableDates) { date ->
+                        items(uiState.availableDates) { date: LocalDate ->
                             DateChip(
                                 date = date,
                                 isSelected = date == uiState.selectedDate,
-                                onDateSelected = { viewModel.onDateSelected(date) }
+                                onDateSelected = { viewModel.selectDate(date) }
                             )
                         }
                     }
 
                     when {
-                        uiState.isLoadingTimeSlots -> {
+                        uiState.loadingSlots -> {
                             CircularProgressIndicator(modifier = Modifier.padding(16.dp))
                         }
-                        uiState.selectedDate != null && uiState.availableTimeSlots.isEmpty() -> {
+                        uiState.selectedDate != null && uiState.availability.isEmpty() -> {
                             Text(
                                 "Nenhum horário disponível para esta data.",
                                 modifier = Modifier.padding(16.dp)
                             )
                         }
-                        uiState.availableTimeSlots.isNotEmpty() -> {
+                        uiState.availability.isNotEmpty() -> {
                             LazyVerticalGrid(
                                 columns = GridCells.Adaptive(minSize = 80.dp),
                                 modifier = Modifier
@@ -166,11 +171,13 @@ fun ScheduleScreen(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                items(uiState.availableTimeSlots) { time ->
+                                items(uiState.availability) { timeIso: String ->
+                                    // Extrair label HH:mm do ISO para exibir
+                                    val label = DateTimeUtils.labelFromIso(timeIso, ZoneId.of("America/Sao_Paulo"))
                                     TimeSlotChip(
-                                        time = time,
-                                        isSelected = time == uiState.selectedTime,
-                                        onTimeSelected = { viewModel.onTimeSelected(time) }
+                                        time = label,
+                                        isSelected = timeIso == uiState.selectedTime,
+                                        onTimeSelected = { viewModel.selectTime(timeIso) } // Passa o ISO completo
                                     )
                                 }
                             }
@@ -182,7 +189,7 @@ fun ScheduleScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             AnimatedVisibility(
-                visible = uiState.isConfirmationButtonEnabled,
+                visible = uiState.canBook,
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
@@ -192,11 +199,11 @@ fun ScheduleScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { viewModel.onScheduleClick() },
+                onClick = { viewModel.book { 1L } },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                enabled = uiState.isConfirmationButtonEnabled,
+                enabled = uiState.canBook,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
