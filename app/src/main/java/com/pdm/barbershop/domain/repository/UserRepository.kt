@@ -7,4 +7,5 @@ interface UserRepository {
     val currentUser: StateFlow<User?>
     suspend fun fetchUser()
     suspend fun clearUser()
+    suspend fun updateUser(user: User)
 }

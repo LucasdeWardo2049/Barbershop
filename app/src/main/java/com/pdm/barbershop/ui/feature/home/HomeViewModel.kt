@@ -72,12 +72,11 @@ class HomeViewModel @Inject constructor(
     private fun fetchAppointmentsForHome(userId: String) {
         viewModelScope.launch {
             try {
-                val clientId = userId.toLongOrNull() ?: return@launch
-                val list = appointmentsRepository.listByClient(clientId)
+                val list = appointmentsRepository.listMyAppointments()
                 val next = list.firstOrNull()
                 val lastService = list.lastOrNull()?.let { appt ->
                     Service(
-                        id = appt.id,
+                        id = appt.serviceId.toString(),
                         name = appt.serviceName,
                         price = 0.0,
                         durationInMinutes = 30,

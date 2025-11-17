@@ -1,5 +1,8 @@
 package com.pdm.barbershop.ui.feature.appointments
 
+import android.annotation.SuppressLint
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,13 +17,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pdm.barbershop.domain.model.Appointment
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
+@SuppressLint("NewApi")
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppointmentsScreen(
-    viewModel: AppointmentsViewModel = viewModel(),
+    viewModel: AppointmentsViewModel,
     onBackClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -37,22 +43,69 @@ fun AppointmentsScreen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
-            contentPadding = paddingValues,
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(paddingValues)
         ) {
-            items(uiState.appointments) { appointment ->
-                AppointmentCard(appointment = appointment)
+            when {
+                uiState.isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                uiState.errorMessage != null -> {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = uiState.errorMessage ?: "Erro ao carregar agendamentos",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = { viewModel.fetchAppointments() }) {
+                            Text("Tentar novamente")
+                        }
+                    }
+                }
+                uiState.appointments.isEmpty() -> {
+                    Text(
+                        text = "Você ainda não possui agendamentos.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(uiState.appointments) { appointment ->
+                            AppointmentCard(appointment = appointment)
+                        }
+                    }
+                }
             }
         }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppointmentCard(appointment: Appointment) {
+    val offsetDateTime = OffsetDateTime.parse(appointment.startTime)
+    val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    val date = offsetDateTime.format(dateFormatter)
+    val time = offsetDateTime.format(timeFormatter)
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -65,7 +118,7 @@ fun AppointmentCard(appointment: Appointment) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Event, contentDescription = "Data e Hora", modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("${appointment.date} às ${appointment.time}", style = MaterialTheme.typography.bodyLarge)
+                Text("$date às $time", style = MaterialTheme.typography.bodyLarge)
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text("Status: ${appointment.status}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)

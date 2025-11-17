@@ -1,5 +1,7 @@
 package com.pdm.barbershop.ui.feature.home
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,7 +21,6 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,14 +32,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.pdm.barbershop.domain.model.Appointment
 import com.pdm.barbershop.domain.model.Service
-import com.pdm.barbershop.domain.repository.AuthRepository
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
@@ -63,8 +65,8 @@ fun HomeScreen(
         // 2. Card do Próximo Agendamento
         NextAppointmentCard(
             appointment = uiState.nextAppointment,
-            onSeeDetailsClicked = { appointmentId ->
-                onNavigateToAppointmentDetails(appointmentId)
+            onSeeDetailsClicked = {
+                appointmentId -> onNavigateToAppointmentDetails(appointmentId.toString())
             },
             onScheduleClicked = onNavigateToSchedule
         )
@@ -98,10 +100,11 @@ fun GreetingSection(userName: String) {
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NextAppointmentCard(
     appointment: Appointment?,
-    onSeeDetailsClicked: (String) -> Unit,
+    onSeeDetailsClicked: (Int) -> Unit,
     onScheduleClicked: () -> Unit
 ) {
     ElevatedCard(
@@ -117,8 +120,12 @@ fun NextAppointmentCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             if (appointment != null) {
+                val odt = OffsetDateTime.parse(appointment.startTime)
+                val date = odt.format(DateTimeFormatter.ofPattern("dd/MM"))
+                val time = odt.format(DateTimeFormatter.ofPattern("HH:mm"))
+
                 Text(
-                    text = "${appointment.serviceName} - ${appointment.date} às ${appointment.time}",
+                    text = "${appointment.serviceName} - $date às $time",
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
@@ -128,7 +135,7 @@ fun NextAppointmentCard(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedButton(
-                    onClick = { onSeeDetailsClicked(appointment.id) },
+                    onClick = { onSeeDetailsClicked(appointment.appointmentId) },
                     modifier = Modifier.align(Alignment.End)
                 ) {
                     Text("Ver Detalhes")
@@ -223,7 +230,7 @@ fun QuickRebookCard(service: Service?, onRebookClicked: () -> Unit) {
             if (service != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = service.icon,
+                        imageVector = Icons.Default.ContentCut, // Placeholder icon
                         contentDescription = service.name,
                         modifier = Modifier.size(32.dp),
                         tint = MaterialTheme.colorScheme.primary
