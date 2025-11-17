@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pdm.barbershop.data.remote.dto.BookAppointmentRequest
 import com.pdm.barbershop.data.repository.ScheduleRepository
 import com.pdm.barbershop.domain.model.Barber
 import com.pdm.barbershop.domain.model.Service
@@ -44,7 +43,8 @@ data class ScheduleUiState(
 @RequiresApi(Build.VERSION_CODES.O)
 @HiltViewModel
 class ScheduleViewModel @Inject constructor(
-    private val repo: ScheduleRepository
+    private val repo: ScheduleRepository,
+    private val userRepository: com.pdm.barbershop.domain.repository.UserRepository
 ) : ViewModel() {
     private val _ui = MutableStateFlow(ScheduleUiState())
     val ui = _ui.asStateFlow()
@@ -117,14 +117,27 @@ class ScheduleViewModel @Inject constructor(
         }
     }
 
-    fun book(clientIdProvider: () -> Long) {
+    fun book() {
         val s = _ui.value
         val svc = s.selectedService ?: return
         val barber = s.selectedBarber ?: return
         val timeIso = s.selectedTime ?: return // ISO completo
-        _ui.update { it.copy(loading = true, errorMessage = null, bookingSuccess = false) }
+
         viewModelScope.launch {
+            _ui.update { it.copy(loading = true, errorMessage = null, bookingSuccess = false) }
             try {
+                // Obter clientId do usuário logado
+                val user = userRepository.currentUser.value
+                val clientId = user?.clientId ?: user?.userId?.toLongOrNull()
+
+                if (clientId == null) {
+                    _ui.update { it.copy(
+                        errorMessage = "Usuário não autenticado. Faça login novamente.",
+                        loading = false
+                    ) }
+                    return@launch
+                }
+
                 // Valida horário passado
                 if (DateTimeUtils.isIsoPast(timeIso)) {
                     _ui.update { it.copy(
@@ -138,14 +151,12 @@ class ScheduleViewModel @Inject constructor(
                 val startUtcZ = toUtcZ(timeIso)
                 Log.d("ScheduleVM", "Booking UTC Z: $startUtcZ (from $timeIso)")
 
-                val req = BookAppointmentRequest(
-                    clientId = clientIdProvider(),
+                repo.book(
+                    clientId = clientId,
                     barberId = barber.id.toLong(),
                     serviceId = svc.id.toLong(),
-                    startTime = startUtcZ,
-                    tz = zone.id
+                    startTime = startUtcZ
                 )
-                repo.book(req)
                 _ui.update { it.copy(bookingSuccess = true, loading = false) }
             } catch (e: Exception) {
                 val msg = classifyError(e)

@@ -4,13 +4,12 @@ import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCut
 import com.pdm.barbershop.data.remote.ApiService
-import com.pdm.barbershop.data.remote.dto.BookAppointmentRequest
-import com.pdm.barbershop.data.remote.dto.BookedAppointmentResponse
+import com.pdm.barbershop.data.remote.dto.AppointmentDto
 import com.pdm.barbershop.data.remote.dto.ServiceDto
+import com.pdm.barbershop.data.remote.dto.UserDto
 import com.pdm.barbershop.domain.model.Barber
 import com.pdm.barbershop.domain.model.Service
 import com.pdm.barbershop.util.DateTimeUtils
-import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
@@ -25,8 +24,7 @@ class ScheduleRepository @Inject constructor(
     }
 
     suspend fun loadBarbers(): List<Barber> = withContext(Dispatchers.IO) {
-        val page = api.getUsers(size = 100)
-        page.content.filter { it.role.equals("BARBER", ignoreCase = true) }.map { user ->
+        api.getBarbers().map { user ->
             Barber(
                 id = user.userId.toString(),
                 name = user.name,
@@ -43,16 +41,24 @@ class ScheduleRepository @Inject constructor(
             slots.map { it.start.toString() }.distinct()
         }
 
-    suspend fun book(req: BookAppointmentRequest): BookedAppointmentResponse =
+    suspend fun book(clientId: Long, barberId: Long, serviceId: Long, startTime: String): AppointmentDto =
         withContext(Dispatchers.IO) {
             // Validação adicional: verificar se startTime não está no passado
-            if (DateTimeUtils.isIsoPast(req.startTime)) {
-                Log.w("Booking", "Tentativa de agendar horário no passado: ${req.startTime}")
+            if (DateTimeUtils.isIsoPast(startTime)) {
+                Log.w("Booking", "Tentativa de agendar horário no passado: $startTime")
                 throw IllegalArgumentException("Horário no passado. Selecione um horário futuro.")
             }
 
-            Log.d("Booking", "Request: clientId=${req.clientId} barberId=${req.barberId} serviceId=${req.serviceId}")
-            Log.d("Booking", "startTime='${req.startTime}' tz='${req.tz}'")
+            val req = com.pdm.barbershop.data.remote.dto.AppointmentRequest(
+                clientId = clientId,
+                barberId = barberId,
+                serviceId = serviceId,
+                startTime = startTime,
+                status = "SCHEDULED"
+            )
+
+            Log.d("Booking", "Request: clientId=$clientId barberId=$barberId serviceId=$serviceId")
+            Log.d("Booking", "startTime='$startTime' status=SCHEDULED")
             try {
                 val resp = api.bookAppointment(req)
                 Log.d("Booking", "Success: appointmentId=${resp.appointmentId} status=${resp.status}")

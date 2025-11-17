@@ -57,8 +57,16 @@ class LoginViewModel @Inject constructor(
                 // Busca e armazena os dados do usuário
                 userRepository.fetchUser()
 
-                // TODO: Decode the token to get the user role
-                _eventChannel.send(LoginEvent.NavigateTo(UserRole.CLIENT))
+                // Obter role do usuário logado
+                val user = userRepository.currentUser.value
+                val userRole = when (user?.role?.uppercase()) {
+                    "ADMIN" -> UserRole.ADMIN
+                    "BARBER" -> UserRole.BARBER
+                    "CLIENT" -> UserRole.CLIENT
+                    else -> UserRole.CLIENT // fallback
+                }
+
+                _eventChannel.send(LoginEvent.NavigateTo(userRole))
 
             } catch (e: HttpException) {
                 _eventChannel.send(LoginEvent.ShowError("Email ou senha inválidos"))

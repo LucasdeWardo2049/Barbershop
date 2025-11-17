@@ -5,6 +5,8 @@ data class User(
     val name: String,
     val email: String,
     val phone: String,
-    val role: String, // Adicionado
+    val role: String,
+    val clientId: Long? = null,
+    val barberId: Long? = null,
     val avatarUrl: String? = null
 )

@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -75,7 +76,12 @@ fun AppNavHost(
         composable(AppDestination.Services.route) { ServicesScreen() }
         composable(AppDestination.Barbers.route) { BarbersScreen() }
         composable(AppDestination.Schedule.route) { ScheduleScreen() }
-        composable(AppDestination.Appointments.route) { AppointmentsScreen(onBackClick = { navController.popBackStack() }) }
+        composable(AppDestination.Appointments.route) {
+            AppointmentsScreen(
+                viewModel = hiltViewModel(),
+                onBackClick = { navController.popBackStack() }
+            )
+        }
         composable(AppDestination.ComandaHistory.route) { ComandaHistoryScreen(onBackClick = { navController.popBackStack() }) }
 
         // Barber Flow
