@@ -7,8 +7,6 @@ import com.pdm.barbershop.data.remote.dto.AppointmentDto
 import com.pdm.barbershop.domain.model.Appointment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 class AppointmentsRepository @Inject constructor(
@@ -21,19 +19,18 @@ class AppointmentsRepository @Inject constructor(
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun AppointmentDto.toDomain(): Appointment {
-        val zoneId = ZoneId.of("America/Sao_Paulo")
-        val localDateTime = startTime.atZoneSameInstant(zoneId).toLocalDateTime()
-
-        val dateFormatter = DateTimeFormatter.ofPattern("dd/MM")
-        val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-
         return Appointment(
-            id = (appointmentId ?: 0L).toString(),
-            date = localDateTime.format(dateFormatter),
-            time = localDateTime.format(timeFormatter),
-            serviceName = serviceName ?: "Serviço #${serviceId}",
+            appointmentId = (appointmentId ?: 0L).toInt(),
+            barberId = barberId.toInt(),
+            serviceId = serviceId.toInt(),
+            clientId = clientId.toInt(),
+            startTime = startTime.toString(),
+            endTime = endTime?.toString() ?: "",
+            status = status,
+            totalPrice = totalPrice?.toDouble(),
+            clientName = "Nome do Cliente", // Placeholder
             barberName = barberName ?: "Barbeiro #${barberId}",
-            status = status
+            serviceName = serviceName ?: "Serviço #${serviceId}"
         )
     }
 }

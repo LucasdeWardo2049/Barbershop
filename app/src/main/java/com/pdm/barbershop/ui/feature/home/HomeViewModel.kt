@@ -76,7 +76,7 @@ class HomeViewModel @Inject constructor(
                 val next = list.firstOrNull()
                 val lastService = list.lastOrNull()?.let { appt ->
                     Service(
-                        id = appt.id,
+                        id = appt.serviceId.toString(),
                         name = appt.serviceName,
                         price = 0.0,
                         durationInMinutes = 30,

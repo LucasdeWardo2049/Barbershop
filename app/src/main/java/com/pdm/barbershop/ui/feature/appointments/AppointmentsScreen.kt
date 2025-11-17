@@ -17,8 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pdm.barbershop.domain.model.Appointment
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 @SuppressLint("NewApi")
 @RequiresApi(Build.VERSION_CODES.O)
@@ -95,8 +96,16 @@ fun AppointmentsScreen(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppointmentCard(appointment: Appointment) {
+    val offsetDateTime = OffsetDateTime.parse(appointment.startTime)
+    val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    val date = offsetDateTime.format(dateFormatter)
+    val time = offsetDateTime.format(timeFormatter)
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -109,7 +118,7 @@ fun AppointmentCard(appointment: Appointment) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Event, contentDescription = "Data e Hora", modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("${appointment.date} às ${appointment.time}", style = MaterialTheme.typography.bodyLarge)
+                Text("$date às $time", style = MaterialTheme.typography.bodyLarge)
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text("Status: ${appointment.status}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)

@@ -1,10 +1,15 @@
 package com.pdm.barbershop.domain.model
 
 data class Appointment(
-    val id: String,
-    val date: String,
-    val time: String,
-    val serviceName: String,
+    val appointmentId: Int,
+    val barberId: Int,
+    val serviceId: Int,
+    val clientId: Int,
+    val startTime: String,
+    val endTime: String,
+    val status: String,
+    val totalPrice: Double?,
+    val clientName: String,
     val barberName: String,
-    val status: String
+    val serviceName: String
 )
