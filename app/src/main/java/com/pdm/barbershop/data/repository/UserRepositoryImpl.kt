@@ -39,4 +39,8 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun clearUser() {
         _currentUser.value = null
     }
+
+    override suspend fun updateUser(user: User) {
+        _currentUser.value = user
+    }
 }

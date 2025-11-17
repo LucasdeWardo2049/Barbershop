@@ -1,5 +1,7 @@
 package com.pdm.barbershop.domain.model
 
+import com.pdm.barbershop.data.remote.dto.UserDto
+
 data class User(
     val userId: String,
     val name: String,
@@ -10,3 +12,16 @@ data class User(
     val barberId: Long? = null,
     val avatarUrl: String? = null
 )
+
+fun UserDto.toDomain(): User {
+    return User(
+        userId = userId.toString(),
+        name = name,
+        email = email ?: "",
+        phone = phone ?: "",
+        role = role,
+        clientId = clientId,
+        barberId = barberId,
+        avatarUrl = avatarUrl
+    )
+}

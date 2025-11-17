@@ -1,6 +1,7 @@
 package com.pdm.barbershop.data.remote
 
 import com.pdm.barbershop.data.remote.dto.*
+import okhttp3.MultipartBody
 import retrofit2.http.*
 
 interface ApiService {
@@ -35,5 +36,11 @@ interface ApiService {
 
     @GET("api/v1/appointments/me")
     suspend fun getMyAppointments(): List<AppointmentDto>
-}
 
+    @Multipart
+    @POST("api/v1/users/{userId}/avatar")
+    suspend fun uploadAvatar(
+        @Path("userId") userId: String,
+        @Part avatar: MultipartBody.Part
+    ): UserDto
+}
