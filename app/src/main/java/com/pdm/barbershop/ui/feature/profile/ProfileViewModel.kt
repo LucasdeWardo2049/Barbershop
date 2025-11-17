@@ -30,22 +30,48 @@ import java.io.FileOutputStream
 data class ProfileUiState(
     val userName: String = "",
     val userEmail: String = "",
-    val profileImageUri: Uri? = null
+    val profileImageUri: Uri? = null,
+    val isLoading: Boolean = false
 )
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val tokenRepository: TokenRepository,
-    private val apiService: ApiService, // Adicionado
-    private val application: Application // Adicionado
+    private val apiService: ApiService,
+    private val application: Application
 ) : ViewModel() {
 
     private val _profileImageUri = MutableStateFlow<Uri?>(null)
+    private val _isLoading = MutableStateFlow(false)
 
     init {
+        loadProfileData()
+    }
+
+    val uiState: StateFlow<ProfileUiState> = combine(
+        userRepository.currentUser,
+        _profileImageUri,
+        _isLoading
+    ) { user, avatarUri, isLoading ->
+        ProfileUiState(
+            userName = user?.name ?: "",
+            userEmail = user?.email ?: "",
+            profileImageUri = avatarUri,
+            isLoading = isLoading
+        )
+    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ProfileUiState()
+        )
+
+    private fun loadProfileData() {
         viewModelScope.launch {
-            userRepository.currentUser.collect { user ->
+            _isLoading.value = true
+            try {
+                val user = userRepository.currentUser.first()
                 if (user?.avatarUrl != null) {
                     try {
                         val responseBody = apiService.getAvatar(user.userId.toString())
@@ -63,25 +89,13 @@ class ProfileViewModel @Inject constructor(
                 } else {
                     _profileImageUri.value = null
                 }
+            } catch (e: Exception) {
+                Log.e("ProfileViewModel", "Error loading profile data", e)
+            } finally {
+                _isLoading.value = false
             }
         }
     }
-
-    val uiState: StateFlow<ProfileUiState> = combine(
-        userRepository.currentUser,
-        _profileImageUri
-    ) { user, avatarUri ->
-        ProfileUiState(
-            userName = user?.name ?: "",
-            userEmail = user?.email ?: "",
-            profileImageUri = avatarUri
-        )
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ProfileUiState()
-        )
 
     fun onProfileImageChanged(uri: Uri?) {
         uri ?: return
@@ -104,6 +118,7 @@ class ProfileViewModel @Inject constructor(
                 val updatedUser = apiService.uploadAvatar(user.userId.toString(), body)
 
                 userRepository.updateUser(updatedUser.toDomain())
+                loadProfileData() // Refresh profile data after avatar upload
 
             } catch (e: Exception) {
                 Log.e("ProfileViewModel", "Falha no upload do avatar", e)
