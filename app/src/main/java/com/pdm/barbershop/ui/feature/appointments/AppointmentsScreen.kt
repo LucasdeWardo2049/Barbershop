@@ -1,5 +1,8 @@
 package com.pdm.barbershop.ui.feature.appointments
 
+import android.annotation.SuppressLint
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,10 +20,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pdm.barbershop.domain.model.Appointment
 
+@SuppressLint("NewApi")
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppointmentsScreen(
-    viewModel: AppointmentsViewModel = viewModel(),
+    viewModel: AppointmentsViewModel,
     onBackClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -37,15 +42,54 @@ fun AppointmentsScreen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
-            contentPadding = paddingValues,
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(paddingValues)
         ) {
-            items(uiState.appointments) { appointment ->
-                AppointmentCard(appointment = appointment)
+            when {
+                uiState.isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                uiState.errorMessage != null -> {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = uiState.errorMessage ?: "Erro ao carregar agendamentos",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = { viewModel.fetchAppointments() }) {
+                            Text("Tentar novamente")
+                        }
+                    }
+                }
+                uiState.appointments.isEmpty() -> {
+                    Text(
+                        text = "Você ainda não possui agendamentos.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(uiState.appointments) { appointment ->
+                            AppointmentCard(appointment = appointment)
+                        }
+                    }
+                }
             }
         }
     }

@@ -5,14 +5,14 @@ import retrofit2.http.*
 
 interface ApiService {
 
-    @GET("services")
+    @GET("api/v1/services")
     suspend fun getServices(
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 100,
         @Query("active") active: Boolean? = true
     ): PagedResponse<ServiceDto>
 
-    @GET("users")
+    @GET("api/v1/users")
     suspend fun getUsers(
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 100,
@@ -20,17 +20,20 @@ interface ApiService {
         @Query("dir") dir: String? = null
     ): PagedResponse<UserDto>
 
-    @GET("barbers/{barberId}/availability")
+    @GET("api/v1/barbers")
+    suspend fun getBarbers(): List<UserDto>
+
+    @GET("api/v1/barbers/{barberId}/availability")
     suspend fun getAvailability(
         @Path("barberId") barberId: Long,
         @Query("serviceId") serviceId: Long,
         @Query("date") date: String // YYYY-MM-DD
     ): List<AvailabilitySlotDto>
 
-    @POST("appointments/book")
-    suspend fun bookAppointment(@Body req: BookAppointmentRequest): BookedAppointmentResponse
+    @POST("api/v1/appointments")
+    suspend fun bookAppointment(@Body req: AppointmentRequest): AppointmentDto
 
-    @GET("appointments/by_client")
-    suspend fun getAppointmentsByClient(@Query("clientId") clientId: Long): List<AppointmentDto>
+    @GET("api/v1/appointments/me")
+    suspend fun getMyAppointments(): List<AppointmentDto>
 }
 

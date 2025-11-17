@@ -32,6 +32,8 @@ data class UserDto(
     @SerializedName("email") val email: String? = null,
     @SerializedName("phone") val phone: String? = null,
     @SerializedName("role") val role: String,
+    @SerializedName("clientId") val clientId: Long? = null,
+    @SerializedName("barberId") val barberId: Long? = null,
     @SerializedName("avatarUrl") val avatarUrl: String? = null
 )
 
@@ -43,7 +45,9 @@ data class AvailabilitySlotDto(
 data class AppointmentDto(
     @SerializedName("appointmentId") val appointmentId: Long? = null,
     @SerializedName("barberId") val barberId: Long,
+    @SerializedName("barberName") val barberName: String? = null,
     @SerializedName("serviceId") val serviceId: Long,
+    @SerializedName("serviceName") val serviceName: String? = null,
     @SerializedName("clientId") val clientId: Long,
     @SerializedName("startTime") val startTime: OffsetDateTime,
     @SerializedName("endTime") val endTime: OffsetDateTime? = null,
@@ -51,6 +55,15 @@ data class AppointmentDto(
     @SerializedName("totalPrice") val totalPrice: BigDecimal? = null
 )
 
+data class AppointmentRequest(
+    @SerializedName("barberId") val barberId: Long,
+    @SerializedName("serviceId") val serviceId: Long,
+    @SerializedName("clientId") val clientId: Long,
+    @SerializedName("startTime") val startTime: String, // ISO 8601
+    @SerializedName("status") val status: String = "SCHEDULED"
+)
+
+// Deprecated - keeping for backward compatibility during migration
 data class BookAppointmentRequest(
     @SerializedName("clientId") val clientId: Long,
     @SerializedName("barberId") val barberId: Long,

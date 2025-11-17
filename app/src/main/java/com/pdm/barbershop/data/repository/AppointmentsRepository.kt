@@ -1,31 +1,38 @@
 package com.pdm.barbershop.data.repository
 
 import android.os.Build
+import androidx.annotation.RequiresApi
 import com.pdm.barbershop.data.remote.ApiService
 import com.pdm.barbershop.data.remote.dto.AppointmentDto
 import com.pdm.barbershop.domain.model.Appointment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 class AppointmentsRepository @Inject constructor(
     private val api: ApiService
 ) {
-    suspend fun listByClient(clientId: Long): List<Appointment> = withContext(Dispatchers.IO) {
-        api.getAppointmentsByClient(clientId).map { it.toDomain() }
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun listMyAppointments(): List<Appointment> = withContext(Dispatchers.IO) {
+        api.getMyAppointments().map { it.toDomain() }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun AppointmentDto.toDomain(): Appointment {
-        val iso = startTime.toString() // e.g. 2025-11-13T12:30:00Z
-        val day = iso.substring(8, 10)
-        val month = iso.substring(5, 7)
-        val time = iso.substring(11, 16) // HH:mm
+        val zoneId = ZoneId.of("America/Sao_Paulo")
+        val localDateTime = startTime.atZoneSameInstant(zoneId).toLocalDateTime()
+
+        val dateFormatter = DateTimeFormatter.ofPattern("dd/MM")
+        val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
         return Appointment(
             id = (appointmentId ?: 0L).toString(),
-            date = "$day/$month",
-            time = time,
-            serviceName = "Serviço #${serviceId}",
-            barberName = "Barbeiro #${barberId}",
+            date = localDateTime.format(dateFormatter),
+            time = localDateTime.format(timeFormatter),
+            serviceName = serviceName ?: "Serviço #${serviceId}",
+            barberName = barberName ?: "Barbeiro #${barberId}",
             status = status
         )
     }

@@ -199,7 +199,7 @@ fun ScheduleScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { viewModel.book { 1L } },
+                onClick = { viewModel.book() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
