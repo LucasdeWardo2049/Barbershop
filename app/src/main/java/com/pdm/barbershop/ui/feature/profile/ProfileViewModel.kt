@@ -14,7 +14,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -22,6 +21,11 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.InputStream
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import java.io.File
+import java.io.FileOutputStream
 
 data class ProfileUiState(
     val userName: String = "",
@@ -37,14 +41,42 @@ class ProfileViewModel @Inject constructor(
     private val application: Application // Adicionado
 ) : ViewModel() {
 
-    val uiState: StateFlow<ProfileUiState> = userRepository.currentUser
-        .map { user ->
-            ProfileUiState(
-                userName = user?.name ?: "",
-                userEmail = user?.email ?: "",
-                profileImageUri = user?.avatarUrl?.toUri()
-            )
+    private val _profileImageUri = MutableStateFlow<Uri?>(null)
+
+    init {
+        viewModelScope.launch {
+            userRepository.currentUser.collect { user ->
+                if (user?.avatarUrl != null) {
+                    try {
+                        val responseBody = apiService.getAvatar(user.userId.toString())
+                        val tempFile = File(application.cacheDir, "avatar_${user.userId}.jpg")
+                        responseBody.byteStream().use { input ->
+                            FileOutputStream(tempFile).use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                        _profileImageUri.value = tempFile.toUri()
+                    } catch (e: Exception) {
+                        Log.e("ProfileViewModel", "Error fetching avatar", e)
+                        _profileImageUri.value = null
+                    }
+                } else {
+                    _profileImageUri.value = null
+                }
+            }
         }
+    }
+
+    val uiState: StateFlow<ProfileUiState> = combine(
+        userRepository.currentUser,
+        _profileImageUri
+    ) { user, avatarUri ->
+        ProfileUiState(
+            userName = user?.name ?: "",
+            userEmail = user?.email ?: "",
+            profileImageUri = avatarUri
+        )
+    }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -69,7 +101,7 @@ class ProfileViewModel @Inject constructor(
                 val requestFile = fileBytes.toRequestBody(mimeType?.toMediaTypeOrNull())
                 val body = MultipartBody.Part.createFormData("file", "avatar.jpg", requestFile)
 
-                val updatedUser = apiService.uploadAvatar(user.userId, body)
+                val updatedUser = apiService.uploadAvatar(user.userId.toString(), body)
 
                 userRepository.updateUser(updatedUser.toDomain())
 
