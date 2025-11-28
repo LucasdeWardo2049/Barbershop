@@ -5,64 +5,49 @@ import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.pdm.barbershop.domain.model.Barber
 import com.pdm.barbershop.domain.model.Service
 import com.pdm.barbershop.util.DateTimeUtils
-import java.time.ZoneId
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.LocalDate
+import java.time.YearMonth
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ScheduleScreen(
@@ -75,269 +60,527 @@ fun ScheduleScreen(
     LaunchedEffect(uiState.bookingSuccess) {
         if (uiState.bookingSuccess) {
             scope.launch {
-                snackbarHostState.showSnackbar("Agendamento confirmado com sucesso!")
+                snackbarHostState.showSnackbar("Agendamento realizado com sucesso!")
                 viewModel.consumeBookingSuccess()
             }
         }
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "Agenda",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .verticalScroll(rememberScrollState())
-                .padding(padding)
-                .padding(16.dp)
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
         ) {
-            uiState.errorMessage?.let { err ->
-                Text(err, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
-            }
-
-            SchedulingStep(title = "1. Escolha o serviço") {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(vertical = 8.dp)
+            if (uiState.loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(top = 8.dp, bottom = 100.dp)
                 ) {
-                    items(uiState.services) { service: Service ->
-                        ServiceChip(
-                            service = service,
-                            isSelected = service == uiState.selectedService,
-                            onServiceSelected = { viewModel.selectService(service) }
-                        )
-                    }
-                }
-            }
-
-            AnimatedVisibility(
-                visible = uiState.selectedService != null,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                SchedulingStep(title = "2. Escolha o profissional") {
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(vertical = 8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        items(uiState.barbers) { barber: Barber ->
-                            BarberItem(
-                                barber = barber,
-                                isSelected = barber == uiState.selectedBarber,
-                                onBarberSelected = { viewModel.selectBarber(barber) }
-                            )
-                        }
-                    }
-                }
-            }
-
-            AnimatedVisibility(
-                visible = uiState.selectedBarber != null,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                SchedulingStep(title = "3. Escolha a data e o horário") {
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(vertical = 8.dp)
-                    ) {
-                        items(uiState.availableDates) { date: LocalDate ->
-                            DateChip(
-                                date = date,
-                                isSelected = date == uiState.selectedDate,
-                                onDateSelected = { viewModel.selectDate(date) }
-                            )
+                    item {
+                        uiState.errorMessage?.let { err ->
+                            ErrorBanner(message = err)
                         }
                     }
 
-                    when {
-                        uiState.loadingSlots -> {
-                            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                    item {
+                        SectionHeader(title = "Serviços", subtitle = "Selecione o procedimento")
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(uiState.services) { service ->
+                                ServiceCardSelector(
+                                    service = service,
+                                    isSelected = service == uiState.selectedService,
+                                    onClick = { viewModel.selectService(service) }
+                                )
+                            }
                         }
-                        uiState.selectedDate != null && uiState.availability.isEmpty() -> {
-                            Text(
-                                "Nenhum horário disponível para esta data.",
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        }
-                        uiState.availability.isNotEmpty() -> {
-                            LazyVerticalGrid(
-                                columns = GridCells.Adaptive(minSize = 80.dp),
-                                modifier = Modifier
-                                    .padding(top = 16.dp)
-                                    .heightIn(min = 100.dp, max = 220.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
+
+                    if (uiState.selectedService != null) {
+                        item {
+                            SectionHeader(title = "Profissional", subtitle = "Quem vai te atender?")
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                items(uiState.availability) { timeIso: String ->
-                                    // Extrair label HH:mm do ISO para exibir
-                                    val label = DateTimeUtils.labelFromIso(timeIso, ZoneId.of("America/Sao_Paulo"))
-                                    TimeSlotChip(
-                                        time = label,
-                                        isSelected = timeIso == uiState.selectedTime,
-                                        onTimeSelected = { viewModel.selectTime(timeIso) } // Passa o ISO completo
+                                items(uiState.barbers) { barber ->
+                                    BarberCardSelector(
+                                        barber = barber,
+                                        isSelected = barber == uiState.selectedBarber,
+                                        onClick = { viewModel.selectBarber(barber) }
                                     )
                                 }
                             }
+                            Spacer(modifier = Modifier.height(24.dp))
+                        }
+                    }
+
+                    if (uiState.selectedBarber != null) {
+                        item {
+                            SectionHeader(title = "Data", subtitle = "Escolha o melhor dia")
+                            
+                            // Implementação de um calendário mensal simplificado
+                            val currentMonth = remember { mutableStateOf(YearMonth.now()) }
+                            
+                            MonthlyCalendar(
+                                yearMonth = currentMonth.value,
+                                selectedDate = uiState.selectedDate,
+                                onDateSelected = { viewModel.selectDate(it) },
+                                onMonthChanged = { currentMonth.value = it }
+                            )
+                            
+                            Spacer(modifier = Modifier.height(24.dp))
+                        }
+
+                        item {
+                            SectionHeader(title = "Horário", subtitle = "Disponibilidade para o dia selecionado")
+                            
+                            if (uiState.loadingSlots) {
+                                Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(strokeWidth = 2.dp)
+                                }
+                            } else if (uiState.selectedDate != null) {
+                                if (uiState.availability.isEmpty()) {
+                                    EmptyStateMessage(message = "Nenhum horário disponível para esta data.")
+                                } else {
+                                    val rows = (uiState.availability.size + 3) / 4
+                                    val gridHeight = (rows * 56).dp 
+                                    
+                                    LazyVerticalGrid(
+                                        columns = GridCells.Fixed(4),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp)
+                                            .heightIn(min = 0.dp, max = 1000.dp)
+                                            .height(gridHeight), 
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        userScrollEnabled = false
+                                    ) {
+                                        items(uiState.availability) { timeIso ->
+                                            val label = DateTimeUtils.labelFromIso(timeIso, ZoneId.of("America/Sao_Paulo"))
+                                            TimeSlotSelector(
+                                                time = label,
+                                                isSelected = timeIso == uiState.selectedTime,
+                                                onClick = { viewModel.selectTime(timeIso) }
+                                            )
+                                        }
+                                    }
+                                }
+                            } else {
+                                Text(
+                                    "Selecione uma data acima para ver os horários.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(32.dp))
+                        }
+                    }
+
+                    if (uiState.canBook) {
+                        item {
+                             AppointmentSummarySection(uiState = uiState)
+                        }
+                    }
+                }
+
+                // Botão Flutuante (FAB Estendido)
+                if (uiState.canBook) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(16.dp)
+                    ) {
+                        ExtendedFloatingActionButton(
+                            onClick = { viewModel.book() },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("Confirmar Agendamento", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            AnimatedVisibility(
-                visible = uiState.canBook,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                AppointmentSummaryCard(uiState = uiState)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = { viewModel.book() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                enabled = uiState.canBook,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Text("Confirmar Agendamento", fontSize = 16.sp)
-            }
-        }
-    }
-}
-
-@Composable
-fun TimeSlotChip(time: String, isSelected: Boolean, onTimeSelected: () -> Unit) {
-    BaseChip(
-        label = time,
-        isSelected = isSelected,
-        onClick = onTimeSelected
-    )
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun DateChip(date: LocalDate, isSelected: Boolean, onDateSelected: () -> Unit) {
-    val formatter = DateTimeFormatter.ofPattern("dd/MM")
-    BaseChip(
-        label = date.format(formatter),
-        isSelected = isSelected,
-        onClick = onDateSelected
-    )
-}
-
-@Composable
-fun ServiceChip(service: Service, isSelected: Boolean, onServiceSelected: () -> Unit) {
-    AssistChip(
-        onClick = onServiceSelected,
-        label = { Text(service.name) },
-        leadingIcon = { Icon(service.icon, contentDescription = null) },
-        colors = AssistChipDefaults.assistChipColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-            labelColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-        ),
-        shape = RoundedCornerShape(12.dp)
-    )
-}
-
-@Composable
-fun BaseChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
-    AssistChip(
-        onClick = onClick,
-        label = { Text(label) },
-        colors = AssistChipDefaults.assistChipColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-            labelColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-        ),
-        shape = RoundedCornerShape(12.dp)
-    )
-}
-
-@Composable
-fun BarberItem(barber: Barber, isSelected: Boolean, onBarberSelected: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .width(120.dp)
-            .height(140.dp)
-            .clickable { onBarberSelected() },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-            Text(
-                barber.name,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
-fun SchedulingStep(title: String, content: @Composable () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            content()
         }
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AppointmentSummaryCard(uiState: ScheduleUiState) {
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.getDefault())
-    val dateFormatter = DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale("pt", "BR"))
-
-    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+fun MonthlyCalendar(
+    yearMonth: YearMonth,
+    selectedDate: LocalDate?,
+    onDateSelected: (LocalDate) -> Unit,
+    onMonthChanged: (YearMonth) -> Unit
+) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        // Header do Calendário (Mês/Ano e Navegação)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { onMonthChanged(yearMonth.minusMonths(1)) }) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Mês Anterior")
+            }
+            
             Text(
-                "Resumo do Agendamento",
+                text = yearMonth.month.getDisplayName(TextStyle.FULL, Locale("pt", "BR")).replaceFirstChar { it.uppercase() } + " " + yearMonth.year,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            
+            IconButton(onClick = { onMonthChanged(yearMonth.plusMonths(1)) }) {
+                Icon(Icons.Default.ArrowForward, contentDescription = "Próximo Mês")
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
 
-            val serviceSummary = uiState.selectedService?.let {
-                "${it.name} (${currencyFormat.format(it.price)})"
-            } ?: "-"
+        // Dias da Semana
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            listOf("DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB").forEach { day ->
+                Text(
+                    text = day,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
 
-            val barberSummary = uiState.selectedBarber?.name ?: "-"
-            val dateSummary = uiState.selectedDate?.format(dateFormatter) ?: "-"
-            val timeSummary = uiState.selectedTime ?: "-"
+        // Dias do Mês
+        val daysInMonth = yearMonth.lengthOfMonth()
+        val firstDayOfWeek = yearMonth.atDay(1).dayOfWeek.value % 7 // 0 = Domingo, 6 = Sábado (ajuste conforme Locale se necessário, aqui assumindo Domingo como 0 para alinhar com a lista acima)
+        
+        // Ajuste: dayOfWeek.value retorna 1 (Segunda) a 7 (Domingo). Para o grid começar em Domingo (index 0), precisamos converter.
+        // Se a semana começa no Domingo:
+        // 1 (Seg) -> 1
+        // 7 (Dom) -> 0
+        val startOffset = if (yearMonth.atDay(1).dayOfWeek.value == 7) 0 else yearMonth.atDay(1).dayOfWeek.value
 
-            SummaryRow("Serviço:", serviceSummary)
-            SummaryRow("Profissional:", barberSummary)
-            SummaryRow("Data:", dateSummary)
-            SummaryRow("Horário:", timeSummary)
+        val totalCells = daysInMonth + startOffset
+        val rows = (totalCells + 6) / 7
+
+        Column {
+            for (row in 0 until rows) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    for (col in 0 until 7) {
+                        val day = (row * 7 + col) - startOffset + 1
+                        if (day in 1..daysInMonth) {
+                            val date = yearMonth.atDay(day)
+                            val isSelected = date == selectedDate
+                            val isToday = date == LocalDate.now()
+                            val isPast = date.isBefore(LocalDate.now())
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(1f)
+                                    .padding(4.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.primary
+                                        else if (isToday) MaterialTheme.colorScheme.secondaryContainer
+                                        else Color.Transparent
+                                    )
+                                    .then(if (!isPast) Modifier.clickable(onClick = { onDateSelected(date) }) else Modifier), // Desabilita clique em dias passados
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = day.toString(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                    else if (isPast) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                                    else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun SummaryRow(label: String, value: String) {
-    Row(modifier = Modifier.padding(vertical = 4.dp)) {
-        Text(label, fontWeight = FontWeight.Bold, modifier = Modifier.width(100.dp))
-        Text(value)
+fun SectionHeader(title: String, subtitle: String) {
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+fun ErrorBanner(message: String) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = message,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+fun EmptyStateMessage(message: String) {
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .padding(16.dp)
+        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+        .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+fun ServiceCardSelector(service: Service, isSelected: Boolean, onClick: () -> Unit) {
+    val containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+    val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+    val borderStroke = if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+
+    ElevatedCard(
+        onClick = onClick,
+        colors = CardDefaults.elevatedCardColors(containerColor = containerColor, contentColor = contentColor),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = if (isSelected) 4.dp else 1.dp),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.height(80.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .fillMaxHeight(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(service.icon, contentDescription = null)
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(service.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                Text(
+                    NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(service.price),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = contentColor.copy(alpha = 0.8f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun BarberCardSelector(barber: Barber, isSelected: Boolean, onClick: () -> Unit) {
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+    
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Surface(
+            onClick = onClick,
+            modifier = Modifier.size(80.dp),
+            shape = CircleShape,
+            border = BorderStroke(2.dp, borderColor),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 2.dp
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                if (barber.imageUrl != null) {
+                    AsyncImage(
+                        model = barber.imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+                if (isSelected) {
+                    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)))
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            barber.name.split(" ").first(),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
+fun DateCardSelector(date: LocalDate, isSelected: Boolean, onClick: () -> Unit) {
+    val formatterDay = DateTimeFormatter.ofPattern("dd")
+    val formatterWeek = DateTimeFormatter.ofPattern("EEE", Locale("pt", "BR"))
+    
+    val containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+    val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    val border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+
+    OutlinedCard(
+        onClick = onClick,
+        colors = CardDefaults.outlinedCardColors(containerColor = containerColor, contentColor = contentColor),
+        border = border ?: CardDefaults.outlinedCardBorder(),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.size(width = 64.dp, height = 80.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                date.format(formatterWeek).uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                date.format(formatterDay),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+fun TimeSlotSelector(time: String, isSelected: Boolean, onClick: () -> Unit) {
+    val containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+    val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+    val border = if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+
+    Surface(
+        onClick = onClick,
+        color = containerColor,
+        contentColor = contentColor,
+        shape = RoundedCornerShape(8.dp),
+        border = border,
+        modifier = Modifier.height(40.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+            Text(
+                text = time,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun AppointmentSummarySection(uiState: ScheduleUiState) {
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
+    val dateFormatter = DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale("pt", "BR"))
+
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    "Resumo do Agendamento",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Divider(modifier = Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+            
+            SummaryRowItem("Serviço", uiState.selectedService?.name ?: "-")
+            SummaryRowItem("Profissional", uiState.selectedBarber?.name ?: "-")
+            SummaryRowItem("Data", uiState.selectedDate?.format(dateFormatter) ?: "-")
+            SummaryRowItem("Horário", uiState.selectedTime?.let { DateTimeUtils.labelFromIso(it, ZoneId.of("America/Sao_Paulo")) } ?: "-")
+            
+            Divider(modifier = Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Total", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    uiState.selectedService?.let { currencyFormat.format(it.price) } ?: "R$ 0,00",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SummaryRowItem(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
     }
 }

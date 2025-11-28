@@ -30,7 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.pdm.barbershop.ui.theme.BarbershopTheme
+import com.pdm.barbershop.ui.BarbershopTheme
 
 @Composable
 fun ProfileScreen(

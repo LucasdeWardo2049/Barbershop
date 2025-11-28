@@ -1,30 +1,43 @@
 package com.pdm.barbershop.ui.feature.notifications
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.pdm.barbershop.domain.model.Notification
+import com.pdm.barbershop.domain.repository.NotificationRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class NotificationsUiState(
     val notifications: List<Notification> = emptyList()
 )
 
-class NotificationsViewModel : ViewModel() {
+@HiltViewModel
+class NotificationsViewModel @Inject constructor(
+    private val notificationRepository: NotificationRepository
+) : ViewModel() {
     private val _uiState = MutableStateFlow(NotificationsUiState())
     val uiState = _uiState.asStateFlow()
 
     init {
-        fetchNotifications()
+        observeNotifications()
     }
 
-    private fun fetchNotifications() {
-        _uiState.value = NotificationsUiState(
-            notifications = listOf(
-                Notification("1", "Agendamento Confirmado!", "Seu corte com Renato Lima foi confirmado para 25/09 às 10:00.", "Hoje, 09:30", false),
-                Notification("2", "Lembrete de Agendamento", "Não se esqueça do seu horário amanhã às 15:30.", "Ontem, 18:00", true),
-                Notification("3", "Promoção Especial", "Nesta semana, o combo Corte + Barba está com 20% de desconto.", "2 dias atrás", true),
-                Notification("4", "Pagamento Recebido", "Sua comanda de R$ 90,00 foi paga com sucesso.", "5 dias atrás", true)
-            )
-        )
+    private fun observeNotifications() {
+        viewModelScope.launch {
+            notificationRepository.notifications.collectLatest { list ->
+                _uiState.update { it.copy(notifications = list) }
+            }
+        }
+    }
+
+    fun markAsRead(id: String) {
+        viewModelScope.launch {
+            notificationRepository.markAsRead(id)
+        }
     }
 }

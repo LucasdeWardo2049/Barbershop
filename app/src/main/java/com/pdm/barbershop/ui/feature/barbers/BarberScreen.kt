@@ -16,15 +16,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person // Placeholder para foto
-import androidx.compose.material.icons.filled.Star // Para avaliação
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,10 +40,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.pdm.barbershop.domain.model.Barber
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BarbersScreen(viewModel: BarbersViewModel = viewModel()) {
+fun BarbersScreen(
+    viewModel: BarbersViewModel = viewModel(),
+    onBackClick: () -> Unit = {}
+) {
     val barbers by viewModel.barbers.collectAsState()
     val currentSortOrder by viewModel.sortOrder.collectAsState()
     val lazyListState = rememberLazyListState()
@@ -49,58 +59,72 @@ fun BarbersScreen(viewModel: BarbersViewModel = viewModel()) {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            val isNameSelected = currentSortOrder == SortOrder.BY_NAME
-            val selectedButtonContainerColor = Color(0xFFF3D9C9)
-            val selectedButtonContentColor = Color(0xFF1E3932)
-
-            Button(
-                onClick = { viewModel.setSortOrder(SortOrder.BY_NAME) },
-                modifier = Modifier.height(if (isNameSelected) 62.dp else 54.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isNameSelected) selectedButtonContainerColor else MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = if (isNameSelected) selectedButtonContentColor else MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            ) {
-                Text("Ordenar por Nome")
-            }
-
-            val isRatingSelected = currentSortOrder == SortOrder.BY_RATING
-            Button(
-                onClick = { viewModel.setSortOrder(SortOrder.BY_RATING) },
-                modifier = Modifier.height(if (isRatingSelected) 62.dp else 54.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isRatingSelected) selectedButtonContainerColor else MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = if (isRatingSelected) selectedButtonContentColor else MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            ) {
-                Text("Ordenar por Avaliação")
-            }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Barbeiros") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                    }
+                }
+            )
         }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (barbers.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Nenhum barbeiro encontrado.")
-            }
-        } else {
-            LazyColumn(
-                state = lazyListState,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                items(barbers, key = { barber -> barber.id }) { barber ->
-                    BarberItem(barber = barber)
+                val isNameSelected = currentSortOrder == SortOrder.BY_NAME
+                val selectedButtonContainerColor = Color(0xFFF3D9C9)
+                val selectedButtonContentColor = Color(0xFF1E3932)
+
+                Button(
+                    onClick = { viewModel.setSortOrder(SortOrder.BY_NAME) },
+                    modifier = Modifier.height(if (isNameSelected) 62.dp else 54.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isNameSelected) selectedButtonContainerColor else MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = if (isNameSelected) selectedButtonContentColor else MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                ) {
+                    Text("Ordenar por Nome")
+                }
+
+                val isRatingSelected = currentSortOrder == SortOrder.BY_RATING
+                Button(
+                    onClick = { viewModel.setSortOrder(SortOrder.BY_RATING) },
+                    modifier = Modifier.height(if (isRatingSelected) 62.dp else 54.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isRatingSelected) selectedButtonContainerColor else MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = if (isRatingSelected) selectedButtonContentColor else MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                ) {
+                    Text("Ordenar por Avaliação")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (barbers.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Nenhum barbeiro encontrado.")
+                }
+            } else {
+                LazyColumn(
+                    state = lazyListState,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(barbers, key = { barber -> barber.id }) { barber ->
+                        BarberItem(barber = barber)
+                    }
                 }
             }
         }
@@ -119,11 +143,22 @@ fun BarberItem(barber: Barber, modifier: Modifier = Modifier) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Filled.Person, // Placeholder
-                contentDescription = "Foto do Barbeiro",
-                modifier = Modifier.size(40.dp)
-            )
+            if (barber.imageUrl != null) {
+                AsyncImage(
+                    model = barber.imageUrl,
+                    contentDescription = "Foto de ${barber.name}",
+                    modifier = Modifier.size(40.dp),
+                    placeholder = null, // Poderia ser um placeholder
+                    error = null // Poderia ser um erro
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Filled.Person, // Placeholder
+                    contentDescription = "Foto do Barbeiro",
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(barber.name, style = MaterialTheme.typography.titleMedium)

@@ -8,6 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.pdm.barbershop.data.repository.ScheduleRepository
 import com.pdm.barbershop.domain.model.Barber
 import com.pdm.barbershop.domain.model.Service
+import com.pdm.barbershop.domain.repository.NotificationRepository
+import com.pdm.barbershop.domain.repository.UserRepository
 import com.pdm.barbershop.util.DateTimeUtils
 import com.pdm.barbershop.util.DateTimeUtils.toUtcZ
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -44,7 +46,8 @@ data class ScheduleUiState(
 @HiltViewModel
 class ScheduleViewModel @Inject constructor(
     private val repo: ScheduleRepository,
-    private val userRepository: com.pdm.barbershop.domain.repository.UserRepository
+    private val userRepository: UserRepository,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
     private val _ui = MutableStateFlow(ScheduleUiState())
     val ui = _ui.asStateFlow()
@@ -157,6 +160,12 @@ class ScheduleViewModel @Inject constructor(
                     serviceId = svc.id.toLong(),
                     startTime = startUtcZ
                 )
+                
+                notificationRepository.addNotification(
+                    title = "Agendamento Confirmado",
+                    message = "Seu agendamento para ${svc.name} com ${barber.name} foi confirmado para ${DateTimeUtils.labelFromIso(timeIso, zone)}."
+                )
+
                 _ui.update { it.copy(bookingSuccess = true, loading = false) }
             } catch (e: Exception) {
                 val msg = classifyError(e)

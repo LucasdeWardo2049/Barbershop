@@ -1,11 +1,15 @@
 package com.pdm.barbershop.ui.feature.home
 
+import android.app.Application
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCut // Para o ícone de exemplo
+import androidx.compose.material.icons.filled.ContentCut
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pdm.barbershop.data.remote.ApiService
 import com.pdm.barbershop.data.repository.AppointmentsRepository
 import com.pdm.barbershop.data.session.SessionManager
 import com.pdm.barbershop.domain.model.Appointment
@@ -18,14 +22,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 
-// Estado da UI para a HomeScreen
 data class HomeUiState(
     val userName: String = "",
+    val userAvatar: Any? = null, // Mudado para Any? para suportar Uri ou String/Int
     val nextAppointment: Appointment? = null,
     val lastServiceForRebooking: Service? = null,
     val isLoading: Boolean = false,
-    val error: String? = null, // Para futuras mensagens de erro
+    val error: String? = null,
     val sessionExpired: Boolean = false
 )
 
@@ -34,7 +40,9 @@ data class HomeUiState(
 class HomeViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val appointmentsRepository: AppointmentsRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val apiService: ApiService,
+    private val application: Application
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -49,10 +57,37 @@ class HomeViewModel @Inject constructor(
     private fun observeUser() {
         viewModelScope.launch {
             userRepository.currentUser.collect { user ->
-                _uiState.update { it.copy(userName = user?.name ?: "") }
+                _uiState.update { 
+                    it.copy(userName = user?.name ?: "") 
+                }
                 if (user != null) {
                     fetchAppointmentsForHome(user.userId)
+                    fetchUserAvatar(user.userId, user.avatarUrl)
                 }
+            }
+        }
+    }
+
+    private fun fetchUserAvatar(userId: String, avatarUrl: String?) {
+        if (avatarUrl == null) {
+             _uiState.update { it.copy(userAvatar = null) }
+             return
+        }
+
+        viewModelScope.launch {
+            try {
+                val responseBody = apiService.getAvatar(userId)
+                val tempFile = File(application.cacheDir, "avatar_${userId}_home.jpg")
+                responseBody.byteStream().use { input ->
+                    FileOutputStream(tempFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                _uiState.update { it.copy(userAvatar = tempFile.toUri()) }
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error fetching avatar", e)
+                // Se falhar o download, mantemos null ou poderíamos tentar usar a URL original se acessível
+                _uiState.update { it.copy(userAvatar = null) } 
             }
         }
     }

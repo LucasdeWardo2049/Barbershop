@@ -1,4 +1,4 @@
-package com.pdm.barbershop.ui.theme
+package com.pdm.barbershop.ui
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

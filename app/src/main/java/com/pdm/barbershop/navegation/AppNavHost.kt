@@ -73,8 +73,12 @@ fun AppNavHost(
                 onNavigateToAppointmentDetails = { navController.navigate(AppDestination.Appointments.route) }
             )
         }
-        composable(AppDestination.Services.route) { ServicesScreen() }
-        composable(AppDestination.Barbers.route) { BarbersScreen() }
+        composable(AppDestination.Services.route) {
+            ServicesScreen(onBackClick = { navController.popBackStack() })
+        }
+        composable(AppDestination.Barbers.route) {
+            BarbersScreen(onBackClick = { navController.popBackStack() })
+        }
         composable(AppDestination.Schedule.route) { ScheduleScreen() }
         composable(AppDestination.Appointments.route) {
             AppointmentsScreen(

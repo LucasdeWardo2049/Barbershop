@@ -12,6 +12,8 @@ uiGraphics = "1.9.1"
 firebaseCrashlyticsBuildtools = "3.0.6"
 hilt = "2.52"
 ksp = "2.0.21-1.0.26"
+junitKtx = "1.3.0"
+uiGraphicsVersion = "1.9.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -32,4 +34,6 @@ androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", ve
 firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+androidx-junit-ktx = { group = "androidx.test.ext", name = "junit-ktx", version.ref = "junitKtx" }
+ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphicsVersion" }
 
