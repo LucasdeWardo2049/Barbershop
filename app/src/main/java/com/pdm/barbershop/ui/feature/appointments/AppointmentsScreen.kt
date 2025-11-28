@@ -34,7 +34,8 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun AppointmentsScreen(
     viewModel: AppointmentsViewModel,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onEditAppointment: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -118,7 +119,7 @@ fun AppointmentsScreen(
                         items(uiState.appointments) { appointment ->
                             AppointmentCard(
                                 appointment = appointment,
-                                onEditClick = { /* TODO: Implement edit logic */ },
+                                onEditClick = { onEditAppointment(appointment.appointmentId.toString()) },
                                 onCancelClick = { /* TODO: Implement cancel logic */ }
                             )
                         }

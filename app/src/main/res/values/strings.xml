@@ -15,6 +15,8 @@
     <string name="nav_login">Login</string>
     <string name="nav_logout">Sair</string>
     <string name="nav_register">Registrar</string>
+    <string name="nav_payment">Pagamento</string>
+    <string name="nav_edit_appointment">Editar Agendamento</string>
 
     <!-- Barber -->
     <string name="nav_barber_dashboard">Painel</string>
