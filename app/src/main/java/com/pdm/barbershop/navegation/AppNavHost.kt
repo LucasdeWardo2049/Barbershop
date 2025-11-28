@@ -120,7 +120,7 @@ fun AppNavHost(
         
         composable(AppDestination.ComandaHistory.route) { ComandaHistoryScreen(onBackClick = { navController.popBackStack() }) }
 
-        // Barber Flow
+        // Barber Flow.
         composable(AppDestination.BarberDashboard.route) { BarberDashboardScreen() }
         composable(AppDestination.BarberSchedule.route) { BarberScheduleScreen() }
         composable(AppDestination.BarberReports.route) { BarberReportsScreen() }
