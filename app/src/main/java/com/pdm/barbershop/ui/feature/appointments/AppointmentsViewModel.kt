@@ -20,7 +20,8 @@ import java.net.UnknownHostException
 data class AppointmentsUiState(
     val appointments: List<Appointment> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val successMessage: String? = null
 )
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -37,7 +38,7 @@ class AppointmentsViewModel @Inject constructor(
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun fetchAppointments() {
-        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+        _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
         viewModelScope.launch {
             try {
                 val list = appointmentsRepository.listMyAppointments()
@@ -54,6 +55,37 @@ class AppointmentsViewModel @Inject constructor(
                 ) }
             }
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun cancelAppointment(appointmentId: Int) {
+        _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+        viewModelScope.launch {
+            try {
+                appointmentsRepository.cancelMyAppointment(appointmentId.toLong())
+                // Reload appointments after successful cancellation
+                val list = appointmentsRepository.listMyAppointments()
+                _uiState.update { it.copy(
+                    appointments = list,
+                    isLoading = false,
+                    errorMessage = null,
+                    successMessage = "Agendamento cancelado com sucesso!"
+                ) }
+            } catch (e: Exception) {
+                val errorMsg = when (e) {
+                    is IllegalArgumentException -> e.message ?: "Erro ao cancelar agendamento"
+                    else -> classifyError(e)
+                }
+                _uiState.update { it.copy(
+                    isLoading = false,
+                    errorMessage = errorMsg
+                ) }
+            }
+        }
+    }
+
+    fun clearSuccessMessage() {
+        _uiState.update { it.copy(successMessage = null) }
     }
 
     private fun classifyError(e: Exception): String = when (e) {

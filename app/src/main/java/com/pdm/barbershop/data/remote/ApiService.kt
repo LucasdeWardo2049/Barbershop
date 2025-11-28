@@ -38,6 +38,12 @@ interface ApiService {
     @GET("api/v1/appointments/me")
     suspend fun getMyAppointments(): List<AppointmentDto>
 
+    @GET("api/v1/appointments/me/{id}")
+    suspend fun getMyAppointment(@Path("id") id: Long): AppointmentDto
+
+    @DELETE("api/v1/appointments/me/{id}")
+    suspend fun cancelMyAppointment(@Path("id") id: Long): retrofit2.Response<Unit>
+
     @Multipart
     @POST("api/v1/users/{userId}/avatar")
     suspend fun uploadAvatar(
