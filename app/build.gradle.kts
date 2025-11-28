@@ -69,6 +69,8 @@ dependencies {
     
     // Hilt
     implementation(libs.hilt.android)
+    implementation(libs.androidx.junit.ktx)
+    implementation(libs.ui.graphics)
     ksp(libs.hilt.compiler)
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
@@ -84,6 +86,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
 
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    testImplementation(kotlin("test"))
 }
 
 // Force Gradle sync to fix cache issues

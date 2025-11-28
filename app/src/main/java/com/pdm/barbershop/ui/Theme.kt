@@ -1,4 +1,4 @@
-package com.pdm.barbershop.ui.theme
+package com.pdm.barbershop.ui
 
 import android.app.Activity
 import android.os.Build
@@ -16,51 +16,42 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Paleta de cores baseadas no XML
-private val DarkGreen = Color(0xFF1E3932)
-private val MediumGreen = Color(0xFF385D51)
-private val LightPeach = Color(0xFFF3D9C9)
-private val DarkPeach = Color(0xFFE6A685)
-private val AccentOrange = Color(0xFFD97D54)
-private val OffWhite = Color(0xFFFAF8F7)
-private val LightGray = Color(0xFFD3D3D3)
-private val DarkGray = Color(0xFF4A4A4A)
-private val Black = Color(0xFF000000)
-private val White = Color(0xFFFFFFFF)
-
-// Tema claro
 private val LightColors = lightColorScheme(
-    primary = MediumGreen,
-    onPrimary = White,
-    secondary = AccentOrange,
-    onSecondary = White,
+    primary = DarkGreen, // Verde Escuro
+    onPrimary = PureWhite,
+    primaryContainer = DarkGreen, // Para o topo da tela (AppBar)
+    onPrimaryContainer = PureWhite,
+    secondary = GoldAccent,
+    onSecondary = TextBlack,
     background = OffWhite,
-    onBackground = DarkGreen,
-    surface = White,
-    onSurface = DarkGray,
-    error = DarkPeach,   // pode ser ajustado conforme necessidade
-    onError = White
+    onBackground = TextBlack,
+    surface = PureWhite,
+    onSurface = TextBlack,
+    error = ErrorRed,
+    onError = PureWhite
 )
 
-// Tema escuro
+// O tema escuro pode ser ajustado futuramente, se necessário.
 private val DarkColors = darkColorScheme(
-    primary = DarkPeach,
-    onPrimary = DarkGreen,
-    secondary = AccentOrange,
-    onSecondary = DarkGreen,
-    background = DarkGreen,
-    onBackground = OffWhite,
-    surface = MediumGreen,
-    onSurface = White,
-    error = LightPeach,  // alternativo para diferenciar bem do Light
-    onError = Black
+    primary = DarkGreen,
+    onPrimary = PureWhite,
+    primaryContainer = DarkGreen,
+    onPrimaryContainer = PureWhite,
+    secondary = GoldAccent,
+    onSecondary = TextBlack,
+    background = Color(0xFF121212),
+    onBackground = PureWhite,
+    surface = Color(0xFF1E1E1E),
+    onSurface = PureWhite,
+    error = ErrorRed.copy(alpha = 0.8f),
+    onError = PureWhite
 )
 
 @Composable
 fun BarbershopTheme(
     useDarkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Mantido desabilitado para preservar identidade visual
-    content: @Composable () -> Unit,
+    dynamicColor: Boolean = false,
+    content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
     val colorScheme = when {
@@ -76,14 +67,15 @@ fun BarbershopTheme(
         SideEffect {
             val activity = view.context as Activity
             val window = activity.window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !useDarkTheme
+            // Ajuste para usar a cor primária (verde escuro) na status bar, integrando com a AppBar
+            window.statusBarColor = colorScheme.primary.toArgb() 
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false // Texto claro na status bar escura
         }
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        content = content,
+        content = content
     )
 }

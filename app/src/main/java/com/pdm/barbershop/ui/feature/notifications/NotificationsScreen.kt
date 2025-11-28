@@ -1,5 +1,7 @@
 package com.pdm.barbershop.ui.feature.notifications
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,13 +15,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.pdm.barbershop.domain.model.Notification
+import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(
-    viewModel: NotificationsViewModel = viewModel(),
+    viewModel: NotificationsViewModel = hiltViewModel(),
     onBackClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -48,6 +52,7 @@ fun NotificationsScreen(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NotificationItem(notification: Notification) {
     val backgroundColor = if (notification.isRead) {
@@ -55,6 +60,9 @@ fun NotificationItem(notification: Notification) {
     } else {
         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
     }
+
+    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+    val formattedDate = notification.timestamp.format(formatter)
 
     Column(
         modifier = Modifier
@@ -75,7 +83,7 @@ fun NotificationItem(notification: Notification) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = notification.timestamp,
+            text = formattedDate,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

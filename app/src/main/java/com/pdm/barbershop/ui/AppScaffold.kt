@@ -46,15 +46,8 @@ fun AppScaffold(
 
     Scaffold(
         topBar = {
-            if (shouldShowBars) {
-                CenterAlignedTopAppBar(
-                    title = { Text(text = currentDestination?.title ?: "") },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                )
-            }
+            // A TopBar foi movida para as telas individuais para maior controle e evitar duplicação
+            // Mantemos o bloco vazio ou removemos se não houver TopBar global
         },
         bottomBar = {
             if (shouldShowBars) {
