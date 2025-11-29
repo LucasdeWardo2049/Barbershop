@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.pdm.barbershop.data.remote.ApiService
 import com.pdm.barbershop.data.remote.dto.AppointmentDto
+import com.pdm.barbershop.data.remote.dto.RescheduleAppointmentRequest
 import com.pdm.barbershop.domain.model.Appointment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -32,5 +33,38 @@ class AppointmentsRepository @Inject constructor(
             barberName = barberName ?: "Barbeiro #${barberId}",
             serviceName = serviceName ?: "Serviço #${serviceId}"
         )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun rescheduleAppointment(
+        appointmentId: Long,
+        barberId: Long,
+        serviceId: Long,
+        startTime: String // Formato UTC
+    ): Result<Appointment> = withContext(Dispatchers.IO) {
+        try {
+            val request = RescheduleAppointmentRequest(
+                barberId = barberId,
+                serviceId = serviceId,
+                startTime = startTime
+            )
+            val updated = api.rescheduleAppointment(appointmentId, request)
+            Result.success(updated.toDomain())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun cancelAppointment(appointmentId: Long): Result<Boolean> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.cancelAppointment(appointmentId)
+            if (response.isSuccessful) {
+                Result.success(true)
+            } else {
+                Result.failure(Exception("Falha ao cancelar: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

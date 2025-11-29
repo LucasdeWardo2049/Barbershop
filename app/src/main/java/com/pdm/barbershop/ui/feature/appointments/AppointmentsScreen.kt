@@ -3,41 +3,60 @@ package com.pdm.barbershop.ui.feature.appointments
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.pdm.barbershop.domain.model.Appointment
+import com.pdm.barbershop.util.DateTimeUtils
+import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @SuppressLint("NewApi")
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppointmentsScreen(
-    viewModel: AppointmentsViewModel,
-    onBackClick: () -> Unit,
-    onEditAppointment: (String) -> Unit = {}
+    viewModel: AppointmentsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+
+    LaunchedEffect(uiState.successMessage) {
+        uiState.successMessage?.let { message ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+            viewModel.clearSuccessMessage()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -51,6 +70,7 @@ fun AppointmentsScreen(
                 )
             )
         },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(
@@ -109,24 +129,107 @@ fun AppointmentsScreen(
                     }
                 }
                 else -> {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp),
-                        contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(uiState.appointments) { appointment ->
-                            AppointmentCard(
-                                appointment = appointment,
-                                onEditClick = { onEditAppointment(appointment.appointmentId.toString()) },
-                                onCancelClick = { /* TODO: Implement cancel logic */ }
-                            )
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // Filter Chips
+                        LazyRow(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            item {
+                                FilterChip(
+                                    selected = uiState.currentFilter == AppointmentFilter.ALL,
+                                    onClick = { viewModel.setFilter(AppointmentFilter.ALL) },
+                                    label = { Text("Todos (${uiState.appointments.size})") }
+                                )
+                            }
+                            item {
+                                FilterChip(
+                                    selected = uiState.currentFilter == AppointmentFilter.SCHEDULED,
+                                    onClick = { viewModel.setFilter(AppointmentFilter.SCHEDULED) },
+                                    label = {
+                                        Text("Agendados (${uiState.appointments.count { 
+                                            it.status.uppercase() in listOf("SCHEDULED", "CONFIRMED", "AGENDADO")
+                                        }})")
+                                    }
+                                )
+                            }
+                            item {
+                                FilterChip(
+                                    selected = uiState.currentFilter == AppointmentFilter.CANCELLED,
+                                    onClick = { viewModel.setFilter(AppointmentFilter.CANCELLED) },
+                                    label = {
+                                        Text("Cancelados (${uiState.appointments.count { 
+                                            it.status.uppercase() in listOf("CANCELLED", "CANCELADO")
+                                        }})")
+                                    }
+                                )
+                            }
+                            item {
+                                FilterChip(
+                                    selected = uiState.currentFilter == AppointmentFilter.COMPLETED,
+                                    onClick = { viewModel.setFilter(AppointmentFilter.COMPLETED) },
+                                    label = {
+                                        Text("Concluídos (${uiState.appointments.count { 
+                                            it.status.uppercase() in listOf("COMPLETED", "CONCLUIDO")
+                                        }})")
+                                    }
+                                )
+                            }
+                        }
+
+                        // Appointments List
+                        if (uiState.filteredAppointments.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Nenhum agendamento encontrado nesta categoria.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 16.dp),
+                                contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                items(uiState.filteredAppointments) { appointment ->
+                                    AppointmentCard(
+                                        appointment = appointment,
+                                        onEditClick = { viewModel.openRescheduleDialog(appointment) },
+                                        onCancelClick = { viewModel.cancelAppointment(appointment.appointmentId) }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    // Reschedule Dialog
+    if (uiState.showRescheduleDialog) {
+        RescheduleDialog(
+            appointment = uiState.rescheduleAppointment!!,
+            availableDates = uiState.availableDates,
+            selectedDate = uiState.selectedDate,
+            availableSlots = uiState.availableSlots,
+            selectedSlot = uiState.selectedSlot,
+            loadingSlots = uiState.loadingSlots,
+            isLoading = uiState.isLoading,
+            errorMessage = uiState.errorMessage,
+            onDateSelected = { viewModel.selectRescheduleDate(it) },
+            onSlotSelected = { viewModel.selectRescheduleSlot(it) },
+            onConfirm = { viewModel.confirmReschedule() },
+            onDismiss = { viewModel.closeRescheduleDialog() }
+        )
     }
 }
 
@@ -137,12 +240,17 @@ fun AppointmentCard(
     onEditClick: () -> Unit,
     onCancelClick: () -> Unit
 ) {
+    var showCancelDialog by remember { mutableStateOf(false) }
+
     val offsetDateTime = OffsetDateTime.parse(appointment.startTime)
     val dateFormatter = DateTimeFormatter.ofPattern("dd 'de' MMMM")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     val date = offsetDateTime.format(dateFormatter)
     val time = offsetDateTime.format(timeFormatter)
+
+    // Only show action buttons for SCHEDULED or CONFIRMED appointments
+    val canModify = appointment.status.uppercase() in listOf("SCHEDULED", "CONFIRMED", "AGENDADO")
 
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -205,41 +313,72 @@ fun AppointmentCard(
                 )
             }
             
-            Spacer(modifier = Modifier.height(20.dp))
-            Divider(color = MaterialTheme.colorScheme.outlineVariant)
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                // Botão Editar sem fundo
-                TextButton(
-                    onClick = onEditClick,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary
-                    )
+            if (canModify) {
+                Spacer(modifier = Modifier.height(20.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Editar", modifier = Modifier.size(18.dp))
+                    // Botão Editar sem fundo
+                    TextButton(
+                        onClick = onEditClick,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Editar", modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Editar")
+                    }
+
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Editar")
+
+                    // Botão Cancelar sem fundo
+                    TextButton(
+                        onClick = { showCancelDialog = true },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(Icons.Default.DeleteOutline, contentDescription = "Cancelar", modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Cancelar")
+                    }
                 }
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                // Botão Cancelar sem fundo
+            }
+        }
+    }
+
+    // Cancel confirmation dialog
+    if (showCancelDialog) {
+        AlertDialog(
+            onDismissRequest = { showCancelDialog = false },
+            title = { Text("Cancelar Agendamento") },
+            text = {
+                Text("Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita.")
+            },
+            confirmButton = {
                 TextButton(
-                    onClick = onCancelClick,
+                    onClick = {
+                        showCancelDialog = false
+                        onCancelClick()
+                    },
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Icon(Icons.Default.DeleteOutline, contentDescription = "Cancelar", modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Cancelar")
+                    Text("Sim, Cancelar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelDialog = false }) {
+                    Text("Não")
                 }
             }
-        }
+        )
     }
 }
 
@@ -281,3 +420,293 @@ fun StatusChip(status: String) {
         )
     }
 }
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun RescheduleDialog(
+    appointment: Appointment,
+    availableDates: List<LocalDate>,
+    selectedDate: LocalDate?,
+    availableSlots: List<String>,
+    selectedSlot: String?,
+    loadingSlots: Boolean,
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
+    onDateSelected: (LocalDate) -> Unit,
+    onSlotSelected: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Show error message
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Long
+            )
+        }
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Scaffold(
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        ) { paddingValues ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.95f)
+                    .fillMaxHeight(0.85f)
+                    .padding(paddingValues),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Reagendar",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = appointment.serviceName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Fechar")
+                    }
+                }
+
+                HorizontalDivider()
+
+                // Content
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    item {
+                        Text(
+                            text = "Selecione uma nova data",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Date selector - horizontal scroll
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(availableDates) { date ->
+                                DateChip(
+                                    date = date,
+                                    isSelected = date == selectedDate,
+                                    onClick = { onDateSelected(date) }
+                                )
+                            }
+                        }
+                    }
+
+                    item {
+                        if (selectedDate != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Horários disponíveis",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            when {
+                                loadingSlots -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(100.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator()
+                                    }
+                                }
+                                availableSlots.isEmpty() -> {
+                                    Text(
+                                        text = "Nenhum horário disponível para esta data.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(vertical = 24.dp)
+                                    )
+                                }
+                                else -> {
+                                    // Time slots grid
+                                    LazyVerticalGrid(
+                                        columns = GridCells.Fixed(4),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.heightIn(max = 400.dp),
+                                        userScrollEnabled = false
+                                    ) {
+                                        items(availableSlots) { slot ->
+                                            val label = DateTimeUtils.labelFromIso(
+                                                slot,
+                                                ZoneId.of("America/Sao_Paulo")
+                                            )
+                                            TimeSlotChip(
+                                                time = label,
+                                                isSelected = slot == selectedSlot,
+                                                onClick = { onSlotSelected(slot) }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Footer - Action buttons
+                HorizontalDivider()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        enabled = !isLoading
+                    ) {
+                        Text("Cancelar")
+                    }
+                    Button(
+                        onClick = onConfirm,
+                        modifier = Modifier.weight(1f),
+                        enabled = selectedSlot != null && !isLoading
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Confirmar")
+                        }
+                    }
+                }
+            }
+        }
+    }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun DateChip(
+    date: LocalDate,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val formatterDay = DateTimeFormatter.ofPattern("dd")
+    val formatterWeek = DateTimeFormatter.ofPattern("EEE", Locale("pt", "BR"))
+
+    val containerColor = if (isSelected)
+        MaterialTheme.colorScheme.primary
+    else
+        MaterialTheme.colorScheme.surface
+    val contentColor = if (isSelected)
+        MaterialTheme.colorScheme.onPrimary
+    else
+        MaterialTheme.colorScheme.onSurface
+    val border = if (isSelected)
+        null
+    else
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+
+    OutlinedCard(
+        onClick = onClick,
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        border = border ?: CardDefaults.outlinedCardBorder(),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.size(width = 64.dp, height = 80.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                date.format(formatterWeek).uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                date.format(formatterDay),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+fun TimeSlotChip(
+    time: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val containerColor = if (isSelected)
+        MaterialTheme.colorScheme.primaryContainer
+    else
+        MaterialTheme.colorScheme.surface
+    val contentColor = if (isSelected)
+        MaterialTheme.colorScheme.onPrimaryContainer
+    else
+        MaterialTheme.colorScheme.onSurface
+    val border = if (isSelected)
+        BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+    else
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+
+    Surface(
+        onClick = onClick,
+        color = containerColor,
+        contentColor = contentColor,
+        shape = RoundedCornerShape(8.dp),
+        border = border,
+        modifier = Modifier.height(40.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = time,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            )
+        }
+    }
+}
+
