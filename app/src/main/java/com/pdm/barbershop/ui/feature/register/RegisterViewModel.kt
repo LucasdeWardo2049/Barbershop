@@ -3,6 +3,7 @@ package com.pdm.barbershop.ui.feature.register
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pdm.barbershop.data.remote.RegisterRequest
+import com.pdm.barbershop.domain.model.UserRole
 import com.pdm.barbershop.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -44,6 +45,11 @@ class RegisterViewModel @Inject constructor(
         _uiState.update { it.copy(phone = phone) }
     }
 
+    fun onRoleChange(isBarber: Boolean) {
+        val role = if (isBarber) UserRole.BARBER else UserRole.CLIENT
+        _uiState.update { it.copy(role = role) }
+    }
+
     fun togglePasswordVisibility() {
         _uiState.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
     }
@@ -59,11 +65,13 @@ class RegisterViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
 
             try {
+                // No backend, o role pode ser string "client" ou "barber" (minusculo)
                 val request = RegisterRequest(
                     name = state.name.trim(),
                     email = state.email.trim(),
                     password = state.password.trim(),
-                    phone = state.phone.trim()
+                    phone = state.phone.trim(),
+                    role = state.role.name.lowercase() // Envia "client" ou "barber"
                 )
 
                 authRepository.register(request)
@@ -84,6 +92,7 @@ data class RegisterUiState(
     val password: String = "",
     val confirmPassword: String = "",
     val phone: String = "",
+    val role: UserRole = UserRole.CLIENT, // Default é Cliente
     val isLoading: Boolean = false,
     val isPasswordVisible: Boolean = false
 )

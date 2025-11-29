@@ -88,7 +88,7 @@ fun AppNavHost(
         composable(AppDestination.Payment.route) {
             PaymentScreen(
                 onBackClick = { navController.popBackStack() },
-                onPaymentSuccess = { 
+                onPaymentSuccess = {
                     navController.navigate(AppDestination.Home.route) {
                         popUpTo(AppDestination.Home.route) { inclusive = true }
                     }
@@ -98,7 +98,7 @@ fun AppNavHost(
         composable(AppDestination.Appointments.route) {
             AppointmentsScreen(viewModel = hiltViewModel())
         }
-        
+
         composable(AppDestination.ComandaHistory.route) { ComandaHistoryScreen(onBackClick = { navController.popBackStack() }) }
 
         // Barber Flow
