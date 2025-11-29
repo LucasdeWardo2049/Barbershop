@@ -47,7 +47,7 @@ fun AppointmentsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Show success message
+
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let { message ->
             snackbarHostState.showSnackbar(
@@ -129,19 +129,84 @@ fun AppointmentsScreen(
                     }
                 }
                 else -> {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp),
-                        contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(uiState.appointments) { appointment ->
-                            AppointmentCard(
-                                appointment = appointment,
-                                onEditClick = { viewModel.openRescheduleDialog(appointment) },
-                                onCancelClick = { viewModel.cancelAppointment(appointment.appointmentId) }
-                            )
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // Filter Chips
+                        LazyRow(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            item {
+                                FilterChip(
+                                    selected = uiState.currentFilter == AppointmentFilter.ALL,
+                                    onClick = { viewModel.setFilter(AppointmentFilter.ALL) },
+                                    label = { Text("Todos (${uiState.appointments.size})") }
+                                )
+                            }
+                            item {
+                                FilterChip(
+                                    selected = uiState.currentFilter == AppointmentFilter.SCHEDULED,
+                                    onClick = { viewModel.setFilter(AppointmentFilter.SCHEDULED) },
+                                    label = {
+                                        Text("Agendados (${uiState.appointments.count { 
+                                            it.status.uppercase() in listOf("SCHEDULED", "CONFIRMED", "AGENDADO")
+                                        }})")
+                                    }
+                                )
+                            }
+                            item {
+                                FilterChip(
+                                    selected = uiState.currentFilter == AppointmentFilter.CANCELLED,
+                                    onClick = { viewModel.setFilter(AppointmentFilter.CANCELLED) },
+                                    label = {
+                                        Text("Cancelados (${uiState.appointments.count { 
+                                            it.status.uppercase() in listOf("CANCELLED", "CANCELADO")
+                                        }})")
+                                    }
+                                )
+                            }
+                            item {
+                                FilterChip(
+                                    selected = uiState.currentFilter == AppointmentFilter.COMPLETED,
+                                    onClick = { viewModel.setFilter(AppointmentFilter.COMPLETED) },
+                                    label = {
+                                        Text("Concluídos (${uiState.appointments.count { 
+                                            it.status.uppercase() in listOf("COMPLETED", "CONCLUIDO")
+                                        }})")
+                                    }
+                                )
+                            }
+                        }
+
+                        // Appointments List
+                        if (uiState.filteredAppointments.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Nenhum agendamento encontrado nesta categoria.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 16.dp),
+                                contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                items(uiState.filteredAppointments) { appointment ->
+                                    AppointmentCard(
+                                        appointment = appointment,
+                                        onEditClick = { viewModel.openRescheduleDialog(appointment) },
+                                        onCancelClick = { viewModel.cancelAppointment(appointment.appointmentId) }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -158,6 +223,8 @@ fun AppointmentsScreen(
             availableSlots = uiState.availableSlots,
             selectedSlot = uiState.selectedSlot,
             loadingSlots = uiState.loadingSlots,
+            isLoading = uiState.isLoading,
+            errorMessage = uiState.errorMessage,
             onDateSelected = { viewModel.selectRescheduleDate(it) },
             onSlotSelected = { viewModel.selectRescheduleSlot(it) },
             onConfirm = { viewModel.confirmReschedule() },
@@ -363,22 +430,40 @@ fun RescheduleDialog(
     availableSlots: List<String>,
     selectedSlot: String?,
     loadingSlots: Boolean,
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
     onDateSelected: (LocalDate) -> Unit,
     onSlotSelected: (String) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Show error message
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Long
+            )
+        }
+    }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.85f),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
+        Scaffold(
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        ) { paddingValues ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.95f)
+                    .fillMaxHeight(0.85f)
+                    .padding(paddingValues),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -504,20 +589,30 @@ fun RescheduleDialog(
                 ) {
                     OutlinedButton(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        enabled = !isLoading
                     ) {
                         Text("Cancelar")
                     }
                     Button(
                         onClick = onConfirm,
                         modifier = Modifier.weight(1f),
-                        enabled = selectedSlot != null
+                        enabled = selectedSlot != null && !isLoading
                     ) {
-                        Text("Confirmar")
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Confirmar")
+                        }
                     }
                 }
             }
         }
+    }
     }
 }
 

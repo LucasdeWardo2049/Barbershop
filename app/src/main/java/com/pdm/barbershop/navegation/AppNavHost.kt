@@ -23,6 +23,7 @@ import com.pdm.barbershop.ui.feature.help.HelpScreen
 import com.pdm.barbershop.ui.feature.home.HomeScreen
 import com.pdm.barbershop.ui.feature.login.LoginScreen
 import com.pdm.barbershop.ui.feature.notifications.NotificationsScreen
+import com.pdm.barbershop.ui.feature.payment.PaymentScreen
 import com.pdm.barbershop.ui.feature.profile.EditProfileScreen
 import com.pdm.barbershop.ui.feature.profile.ProfileScreen
 import com.pdm.barbershop.ui.feature.register.RegisterScreen
@@ -79,10 +80,25 @@ fun AppNavHost(
         composable(AppDestination.Barbers.route) {
             BarbersScreen(onBackClick = { navController.popBackStack() })
         }
-        composable(AppDestination.Schedule.route) { ScheduleScreen() }
+        composable(AppDestination.Schedule.route) {
+            ScheduleScreen(
+                onNavigateToPayment = { navController.navigate(AppDestination.Payment.route) }
+            )
+        }
+        composable(AppDestination.Payment.route) {
+            PaymentScreen(
+                onBackClick = { navController.popBackStack() },
+                onPaymentSuccess = { 
+                    navController.navigate(AppDestination.Home.route) {
+                        popUpTo(AppDestination.Home.route) { inclusive = true }
+                    }
+                }
+            )
+        }
         composable(AppDestination.Appointments.route) {
             AppointmentsScreen(viewModel = hiltViewModel())
         }
+        
         composable(AppDestination.ComandaHistory.route) { ComandaHistoryScreen(onBackClick = { navController.popBackStack() }) }
 
         // Barber Flow

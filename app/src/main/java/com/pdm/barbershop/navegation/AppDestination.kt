@@ -15,7 +15,7 @@ sealed class AppDestination(
 ) {
     // Common
     data object Login : AppDestination("login", R.string.nav_login, Icons.Outlined.Lock, "Login")
-    data object Register : AppDestination("register", R.string.nav_register, Icons.Outlined.PersonAdd, "Registrar") // Adicionado
+    data object Register : AppDestination("register", R.string.nav_register, Icons.Outlined.PersonAdd, "Registrar")
     data object Profile : AppDestination("profile", R.string.nav_profile, Icons.Outlined.AccountCircle, "Perfil")
     data object EditProfile : AppDestination("edit_profile", R.string.nav_edit_profile, Icons.Default.Edit, "Editar Perfil")
     data object Notifications : AppDestination("notifications", R.string.nav_notifications, Icons.Outlined.Notifications, "Notificações")
@@ -30,6 +30,13 @@ sealed class AppDestination(
     data object Schedule : AppDestination("schedule", R.string.nav_schedule, Icons.Outlined.CalendarMonth, "Agenda")
     data object Appointments : AppDestination("appointments", R.string.nav_appointments, Icons.Outlined.DateRange, "Meus Agendamentos")
     data object ComandaHistory : AppDestination("comanda_history", R.string.nav_comanda_history, Icons.Outlined.ReceiptLong, "Histórico de Comandas")
+    
+    data object Payment : AppDestination("payment", R.string.nav_payment, Icons.Outlined.Payment, "Pagamento")
+    
+    // Rota com argumento
+    data object EditAppointment : AppDestination("edit_appointment/{appointmentId}", R.string.nav_edit_appointment, Icons.Default.Edit, "Editar Agendamento") {
+        fun createRoute(appointmentId: String) = "edit_appointment/$appointmentId"
+    }
 
     // Barber
     data object BarberDashboard : AppDestination("barber_dashboard", R.string.nav_barber_dashboard, Icons.Default.Dashboard, "Painel")
@@ -43,8 +50,8 @@ sealed class AppDestination(
 
     companion object {
         private val allDestinations = listOf(
-            Login, Register, Profile, EditProfile, Notifications, Help, About, Logout, // Adicionado Register
-            Home, Services, Barbers, Schedule, Appointments, ComandaHistory,
+            Login, Register, Profile, EditProfile, Notifications, Help, About, Logout,
+            Home, Services, Barbers, Schedule, Appointments, ComandaHistory, Payment, EditAppointment,
             BarberDashboard, BarberSchedule, BarberReports,
             AdminDashboard, AdminUsers, AdminReports
         )
@@ -54,6 +61,6 @@ sealed class AppDestination(
         val adminBottomNav = listOf(AdminDashboard, AdminUsers, AdminReports, Profile)
 
         fun fromRoute(route: String?): AppDestination? =
-            allDestinations.firstOrNull { it.route == route }
+            allDestinations.firstOrNull { it.route == route || (it is EditAppointment && route?.startsWith("edit_appointment") == true) }
     }
 }
