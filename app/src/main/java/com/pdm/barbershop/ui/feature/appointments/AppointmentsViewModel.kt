@@ -73,7 +73,7 @@ class AppointmentsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AppointmentsUiState())
     val uiState = _uiState.asStateFlow()
 
-    private val zone = ZoneId.of("America/Sao_Paulo")
+    private val zone = ZoneId.of("America/Manaus")
 
     init {
         Log.d(TAG, "🚀 ViewModel inicializado")
@@ -259,8 +259,8 @@ class AppointmentsViewModel @Inject constructor(
         Log.d(TAG, "✅ REAGENDAR: Horário selecionado (ISO): $slot")
 
         // Converter para UTC format
-        val startUtcZ = DateTimeUtils.toUtcZ(slot)
-        Log.d(TAG, "✅ REAGENDAR: Horário convertido para UTC: $startUtcZ")
+        // val startUtcZ = DateTimeUtils.toUtcZ(slot)
+        // Log.d(TAG, "✅ REAGENDAR: Horário convertido para UTC: $startUtcZ")
 
         // Mostra loading e mantém dialog aberto
         _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
@@ -271,7 +271,7 @@ class AppointmentsViewModel @Inject constructor(
                 appointmentId = appointment.appointmentId.toLong(),
                 barberId = appointment.barberId.toLong(),
                 serviceId = appointment.serviceId.toLong(),
-                startTime = startUtcZ
+                startTime = slot // startUtcZ
             )
                 .onSuccess {
                     Log.d(TAG, "🎉 REAGENDAR: Sucesso! Agendamento atualizado")

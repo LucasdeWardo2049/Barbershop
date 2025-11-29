@@ -11,7 +11,6 @@ import com.pdm.barbershop.domain.model.Service
 import com.pdm.barbershop.domain.repository.NotificationRepository
 import com.pdm.barbershop.domain.repository.UserRepository
 import com.pdm.barbershop.util.DateTimeUtils
-import com.pdm.barbershop.util.DateTimeUtils.toUtcZ
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -158,15 +157,16 @@ class ScheduleViewModel @Inject constructor(
                     return@launch
                 }
 
-                // Converter para formato estrito UTC com 'Z' sem milissegundos
-                val startUtcZ = toUtcZ(timeIso)
-                Log.d("ScheduleVM", "Booking UTC Z: $startUtcZ (from $timeIso)")
+                // Envia o horário exatamente como recebido (com offset), sem converter para UTC Z.
+                // Isso garante que, se o backend aceitar o offset, ele registrará o horário correto.
+                // Se o backend exigir UTC, ele converterá, mas a intenção de horário local será preservada.
+                Log.d("ScheduleVM", "Booking Time ISO (raw): $timeIso")
 
                 repo.book(
                     clientId = clientId,
                     barberId = barber.id.toLong(),
                     serviceId = svc.id.toLong(),
-                    startTime = startUtcZ
+                    startTime = timeIso
                 )
                 
                 notificationRepository.addNotification(

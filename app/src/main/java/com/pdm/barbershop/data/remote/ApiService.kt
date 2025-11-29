@@ -38,7 +38,9 @@ interface ApiService {
     suspend fun bookAppointment(@Body req: AppointmentRequest): AppointmentDto
 
     @GET("api/v1/appointments/me")
-    suspend fun getMyAppointments(): List<AppointmentDto>
+    suspend fun getMyAppointments(
+        @Query("tz") tz: String? = null
+    ): List<AppointmentDto>
 
     @PUT("api/v1/appointments/me/{id}")
     suspend fun rescheduleAppointment(
