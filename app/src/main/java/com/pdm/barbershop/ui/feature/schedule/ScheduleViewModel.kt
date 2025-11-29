@@ -52,7 +52,8 @@ class ScheduleViewModel @Inject constructor(
     private val _ui = MutableStateFlow(ScheduleUiState())
     val ui = _ui.asStateFlow()
 
-    private val zone = ZoneId.of("America/Sao_Paulo")
+    // Ajustado para Manaus conforme solicitado para o ambiente de teste
+    private val zone = ZoneId.of("America/Manaus")
 
     init { loadServicesAndBarbers() }
 
@@ -62,6 +63,7 @@ class ScheduleViewModel @Inject constructor(
             try {
                 val services = repo.loadServices()
                 val barbers = repo.loadBarbers()
+                // Gera datas baseadas no fuso horário correto
                 val dates = List(14) { LocalDate.now(zone).plusDays(it.toLong()) }
                 _ui.update { it.copy(services = services, barbers = barbers, availableDates = dates, loading = false) }
             } catch (e: Exception) {
@@ -109,10 +111,16 @@ class ScheduleViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val slots = repo.loadAvailability(barber.id.toLong(), svc.id.toLong(), date.toString())
-                // Filtrar horários passados (principalmente para hoje)
+                Log.d("ScheduleVM", "Slots recebidos para $date: $slots")
+                
+                // Filtrar horários passados
+                // O backend deve retornar ISO8601 com Offset. DateTimeUtils.isIsoPast deve lidar com isso,
+                // mas garantimos que estamos comparando corretamente com o "agora"
                 val filtered = slots.filter { iso ->
                     !DateTimeUtils.isIsoPast(iso)
                 }
+                Log.d("ScheduleVM", "Slots filtrados: $filtered")
+                
                 _ui.update { it.copy(availability = filtered, loadingSlots = false) }
             } catch (e: Exception) {
                 _ui.update { it.copy(errorMessage = classifyError(e), loadingSlots = false) }

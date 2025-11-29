@@ -14,9 +14,11 @@ import com.pdm.barbershop.ui.feature.admin.AdminDashboardScreen
 import com.pdm.barbershop.ui.feature.admin.AdminReportsScreen
 import com.pdm.barbershop.ui.feature.admin.AdminUsersScreen
 import com.pdm.barbershop.ui.feature.appointments.AppointmentsScreen
+import com.pdm.barbershop.ui.feature.appointments.EditAppointmentScreen
 import com.pdm.barbershop.ui.feature.barber.BarberDashboardScreen
 import com.pdm.barbershop.ui.feature.barber.BarberReportsScreen
 import com.pdm.barbershop.ui.feature.barber.BarberScheduleScreen
+import com.pdm.barbershop.ui.feature.barber.BarberWorkingHoursScreen
 import com.pdm.barbershop.ui.feature.barbers.BarbersScreen
 import com.pdm.barbershop.ui.feature.comanda.ComandaHistoryScreen
 import com.pdm.barbershop.ui.feature.help.HelpScreen
@@ -88,23 +90,34 @@ fun AppNavHost(
         composable(AppDestination.Payment.route) {
             PaymentScreen(
                 onBackClick = { navController.popBackStack() },
-                onPaymentSuccess = {
+                onPaymentSuccess = { 
                     navController.navigate(AppDestination.Home.route) {
                         popUpTo(AppDestination.Home.route) { inclusive = true }
                     }
                 }
             )
         }
+        composable(AppDestination.EditAppointment.route) {
+            EditAppointmentScreen(
+                onBackClick = { navController.popBackStack() },
+                onUpdateSuccess = { navController.popBackStack() }
+            )
+        }
         composable(AppDestination.Appointments.route) {
             AppointmentsScreen(viewModel = hiltViewModel())
         }
-
+        
         composable(AppDestination.ComandaHistory.route) { ComandaHistoryScreen(onBackClick = { navController.popBackStack() }) }
 
         // Barber Flow
-        composable(AppDestination.BarberDashboard.route) { BarberDashboardScreen() }
+        composable(AppDestination.BarberDashboard.route) { 
+            BarberDashboardScreen()
+        }
         composable(AppDestination.BarberSchedule.route) { BarberScheduleScreen() }
         composable(AppDestination.BarberReports.route) { BarberReportsScreen() }
+        composable(AppDestination.BarberWorkingHours.route) {
+            BarberWorkingHoursScreen(onBackClick = { navController.popBackStack() })
+        }
 
         // Admin Flow
         composable(AppDestination.AdminDashboard.route) { AdminDashboardScreen() }

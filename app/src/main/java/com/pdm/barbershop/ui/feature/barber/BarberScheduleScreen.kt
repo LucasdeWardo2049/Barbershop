@@ -2,6 +2,7 @@ package com.pdm.barbershop.ui.feature.barber
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,52 +14,73 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-
-data class BarberAppointment(val time: String, val clientName: String, val service: String, val price: Double)
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.pdm.barbershop.domain.model.Appointment
+import com.pdm.barbershop.util.DateTimeUtils
 
 @Composable
-fun BarberScheduleScreen() {
-    val todayAppointments = listOf(
-        BarberAppointment("09:00", "Carlos Silva", "Corte Masculino", 50.0),
-        BarberAppointment("10:00", "Mariana Costa", "Corte e Barba", 90.0),
-        BarberAppointment("11:30", "Pedro Almeida", "Barba", 40.0),
-        BarberAppointment("14:00", "Gabriel Becil", "Corte Degradê", 50.0),
-        BarberAppointment("15:00", "André Guedes", "Barba e Corte", 90.0),
-        BarberAppointment("16:30", "Renato Lima", "Sobrancelha", 20.0),
-        BarberAppointment("17:30", "Lucas Martins", "Corte Infantil", 45.0)
-    )
+fun BarberScheduleScreen(
+    viewModel: BarberScheduleViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            Text(
-                text = "Agenda de Hoje",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-        }
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (uiState.isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    Text(
+                        text = "Agenda de Hoje",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
 
-        items(todayAppointments) { appointment ->
-            ScheduleItemCard(appointment = appointment)
+                if (uiState.appointments.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Box(modifier = Modifier.padding(24.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                Text(
+                                    "Não há agendamentos para hoje.",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(uiState.appointments) { appointment ->
+                        ScheduleItemCard(appointment = appointment)
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun ScheduleItemCard(appointment: BarberAppointment) {
+fun ScheduleItemCard(appointment: Appointment) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(2.dp)
@@ -71,8 +93,14 @@ fun ScheduleItemCard(appointment: BarberAppointment) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // Coluna do Horário
+             val timeLabel = try {
+                 appointment.startTime.substring(11, 16) // Pega HH:mm
+            } catch (e: Exception) {
+                appointment.startTime
+            }
+            
             Text(
-                text = appointment.time,
+                text = timeLabel,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary
@@ -90,7 +118,7 @@ fun ScheduleItemCard(appointment: BarberAppointment) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = appointment.service,
+                    text = appointment.serviceName,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -98,7 +126,7 @@ fun ScheduleItemCard(appointment: BarberAppointment) {
 
             // Coluna do Preço
             Text(
-                text = "R$ ${String.format("%.2f", appointment.price)}",
+                text = "R$ ${String.format("%.2f", appointment.totalPrice ?: 0.0)}",
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium
             )

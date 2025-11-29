@@ -49,6 +49,7 @@ data class AppointmentDto(
     @SerializedName("serviceId") val serviceId: Long,
     @SerializedName("serviceName") val serviceName: String? = null,
     @SerializedName("clientId") val clientId: Long,
+    @SerializedName("clientName") val clientName: String? = null,
     @SerializedName("startTime") val startTime: OffsetDateTime,
     @SerializedName("endTime") val endTime: OffsetDateTime? = null,
     @SerializedName("status") val status: String,
@@ -91,4 +92,3 @@ data class RescheduleAppointmentRequest(
     @SerializedName("startTime") val startTime: String, // Formato UTC: "2025-11-30T14:00:00Z"
     @SerializedName("tz") val tz: String = "America/Sao_Paulo"
 )
-
