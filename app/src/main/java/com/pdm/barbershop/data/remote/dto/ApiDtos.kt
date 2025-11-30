@@ -63,6 +63,12 @@ data class AppointmentRequest(
     @SerializedName("status") val status: String = "SCHEDULED"
 )
 
+data class RescheduleRequest(
+    @SerializedName("barberId") val barberId: Long,
+    @SerializedName("serviceId") val serviceId: Long,
+    @SerializedName("startTime") val startTime: String // ISO 8601
+)
+
 // Deprecated - keeping for backward compatibility during migration
 data class BookAppointmentRequest(
     @SerializedName("clientId") val clientId: Long,

@@ -41,6 +41,13 @@ class ScheduleRepository @Inject constructor(
             slots.map { it.start.toString() }.distinct()
         }
 
+    suspend fun getAvailability(barberId: Long, serviceId: Long, date: java.time.LocalDate): List<String> =
+        withContext(Dispatchers.IO) {
+            val dateISO = date.toString() // YYYY-MM-DD
+            val slots = api.getAvailability(barberId, serviceId, dateISO)
+            slots.map { it.start.toString() }.distinct()
+        }
+
     suspend fun book(clientId: Long, barberId: Long, serviceId: Long, startTime: String): AppointmentDto =
         withContext(Dispatchers.IO) {
             // Validação adicional: verificar se startTime não está no passado

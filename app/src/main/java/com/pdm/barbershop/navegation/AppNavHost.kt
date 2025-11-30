@@ -81,10 +81,7 @@ fun AppNavHost(
         }
         composable(AppDestination.Schedule.route) { ScheduleScreen() }
         composable(AppDestination.Appointments.route) {
-            AppointmentsScreen(
-                viewModel = hiltViewModel(),
-                onBackClick = { navController.popBackStack() }
-            )
+            AppointmentsScreen(viewModel = hiltViewModel())
         }
         composable(AppDestination.ComandaHistory.route) { ComandaHistoryScreen(onBackClick = { navController.popBackStack() }) }
 
