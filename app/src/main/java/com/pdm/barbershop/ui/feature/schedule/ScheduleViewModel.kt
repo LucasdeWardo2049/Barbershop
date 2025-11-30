@@ -11,7 +11,6 @@ import com.pdm.barbershop.domain.model.Service
 import com.pdm.barbershop.domain.repository.NotificationRepository
 import com.pdm.barbershop.domain.repository.UserRepository
 import com.pdm.barbershop.util.DateTimeUtils
-import com.pdm.barbershop.util.DateTimeUtils.toUtcZ
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -52,7 +51,8 @@ class ScheduleViewModel @Inject constructor(
     private val _ui = MutableStateFlow(ScheduleUiState())
     val ui = _ui.asStateFlow()
 
-    private val zone = ZoneId.of("America/Sao_Paulo")
+    // Ajustado para Manaus conforme solicitado para o ambiente de teste
+    private val zone = ZoneId.of("America/Manaus")
 
     init { loadServicesAndBarbers() }
 
@@ -62,6 +62,7 @@ class ScheduleViewModel @Inject constructor(
             try {
                 val services = repo.loadServices()
                 val barbers = repo.loadBarbers()
+                // Gera datas baseadas no fuso horário correto
                 val dates = List(14) { LocalDate.now(zone).plusDays(it.toLong()) }
                 _ui.update { it.copy(services = services, barbers = barbers, availableDates = dates, loading = false) }
             } catch (e: Exception) {
@@ -109,10 +110,16 @@ class ScheduleViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val slots = repo.loadAvailability(barber.id.toLong(), svc.id.toLong(), date.toString())
-                // Filtrar horários passados (principalmente para hoje)
+                Log.d("ScheduleVM", "Slots recebidos para $date: $slots")
+                
+                // Filtrar horários passados
+                // O backend deve retornar ISO8601 com Offset. DateTimeUtils.isIsoPast deve lidar com isso,
+                // mas garantimos que estamos comparando corretamente com o "agora"
                 val filtered = slots.filter { iso ->
                     !DateTimeUtils.isIsoPast(iso)
                 }
+                Log.d("ScheduleVM", "Slots filtrados: $filtered")
+                
                 _ui.update { it.copy(availability = filtered, loadingSlots = false) }
             } catch (e: Exception) {
                 _ui.update { it.copy(errorMessage = classifyError(e), loadingSlots = false) }
@@ -150,15 +157,16 @@ class ScheduleViewModel @Inject constructor(
                     return@launch
                 }
 
-                // Converter para formato estrito UTC com 'Z' sem milissegundos
-                val startUtcZ = toUtcZ(timeIso)
-                Log.d("ScheduleVM", "Booking UTC Z: $startUtcZ (from $timeIso)")
+                // Envia o horário exatamente como recebido (com offset), sem converter para UTC Z.
+                // Isso garante que, se o backend aceitar o offset, ele registrará o horário correto.
+                // Se o backend exigir UTC, ele converterá, mas a intenção de horário local será preservada.
+                Log.d("ScheduleVM", "Booking Time ISO (raw): $timeIso")
 
                 repo.book(
                     clientId = clientId,
                     barberId = barber.id.toLong(),
                     serviceId = svc.id.toLong(),
-                    startTime = startUtcZ
+                    startTime = timeIso
                 )
                 
                 notificationRepository.addNotification(

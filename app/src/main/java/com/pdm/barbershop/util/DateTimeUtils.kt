@@ -9,15 +9,18 @@ object DateTimeUtils {
     private val DATE_FMT: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
     private val TIME_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
+    // Define Manaus como padrão para todo o app
+    val DEFAULT_ZONE_ID: ZoneId = ZoneId.of("America/Manaus")
+
     // Converte data + hora local para Instant UTC
-    fun toStartInstant(dateIso: String, timeHHmm: String, zoneId: ZoneId): Instant {
+    fun toStartInstant(dateIso: String, timeHHmm: String, zoneId: ZoneId = DEFAULT_ZONE_ID): Instant {
         val date = LocalDate.parse(dateIso, DATE_FMT)
         val time = LocalTime.parse(timeHHmm, TIME_FMT)
         return date.atTime(time).atZone(zoneId).toInstant()
     }
 
     // Converte data + hora local para string UTC ISO-8601 (termina com Z)
-    fun toStartTimeUtc(dateIso: String, timeHHmm: String, zoneId: ZoneId): String {
+    fun toStartTimeUtc(dateIso: String, timeHHmm: String, zoneId: ZoneId = DEFAULT_ZONE_ID): String {
         return toStartInstant(dateIso, timeHHmm, zoneId).truncatedTo(ChronoUnit.SECONDS).let { DateTimeFormatter.ISO_INSTANT.format(it) }
     }
 
@@ -28,14 +31,21 @@ object DateTimeUtils {
     }
 
     // Extrai label HH:mm de um ISO completo para exibir na UI
-    fun labelFromIso(iso: String, zoneId: ZoneId = ZoneId.systemDefault()): String {
+    fun labelFromIso(iso: String, zoneId: ZoneId = DEFAULT_ZONE_ID): String {
         val odt = OffsetDateTime.parse(iso)
         val local = odt.atZoneSameInstant(zoneId).toLocalTime()
         return "%02d:%02d".format(local.hour, local.minute)
     }
+    
+    // Extrai label DD/MM de um ISO completo
+    fun dateLabelFromIso(iso: String, zoneId: ZoneId = DEFAULT_ZONE_ID): String {
+        val odt = OffsetDateTime.parse(iso)
+        val local = odt.atZoneSameInstant(zoneId).toLocalDate()
+        return "%02d/%02d".format(local.dayOfMonth, local.monthValue)
+    }
 
     // Filtra horários futuros (útil para hoje)
-    fun filterFutureTimes(dateIso: String, times: List<String>, zoneId: ZoneId): List<String> {
+    fun filterFutureTimes(dateIso: String, times: List<String>, zoneId: ZoneId = DEFAULT_ZONE_ID): List<String> {
         val today = LocalDate.now(zoneId).format(DATE_FMT)
         if (dateIso != today) return times
         return times.filter {

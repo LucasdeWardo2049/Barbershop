@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
@@ -28,9 +29,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.pdm.barbershop.domain.model.Appointment
+import com.pdm.barbershop.util.DateTimeUtils
+import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @SuppressLint("NewApi")
 @RequiresApi(Build.VERSION_CODES.O)
@@ -81,6 +88,7 @@ fun AppointmentsScreen(
                 )
             )
         },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(
@@ -278,6 +286,8 @@ fun AppointmentCard(
     onEditClick: () -> Unit,
     onCancelClick: () -> Unit
 ) {
+    var showCancelDialog by remember { mutableStateOf(false) }
+
     val offsetDateTime = OffsetDateTime.parse(appointment.startTime)
     val dateFormatter = DateTimeFormatter.ofPattern("dd 'de' MMMM")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -432,7 +442,7 @@ fun AppointmentCard(
                     }
                 }
             }
-        }
+        )
     }
 }
 

@@ -49,6 +49,7 @@ data class AppointmentDto(
     @SerializedName("serviceId") val serviceId: Long,
     @SerializedName("serviceName") val serviceName: String? = null,
     @SerializedName("clientId") val clientId: Long,
+    @SerializedName("clientName") val clientName: String? = null,
     @SerializedName("startTime") val startTime: OffsetDateTime,
     @SerializedName("endTime") val endTime: OffsetDateTime? = null,
     @SerializedName("status") val status: String,
@@ -70,6 +71,8 @@ data class RescheduleRequest(
 )
 
 // Deprecated - keeping for backward compatibility during migration
+@Suppress("unused")
+@Deprecated("Use AppointmentRequest instead", ReplaceWith("AppointmentRequest"))
 data class BookAppointmentRequest(
     @SerializedName("clientId") val clientId: Long,
     @SerializedName("barberId") val barberId: Long,
@@ -79,6 +82,8 @@ data class BookAppointmentRequest(
     @SerializedName("tz") val tz: String? = "America/Sao_Paulo"
 )
 
+@Suppress("unused")
+@Deprecated("No longer used in current API version", level = DeprecationLevel.WARNING)
 data class BookedAppointmentResponse(
     @SerializedName("appointmentId") val appointmentId: Long,
     @SerializedName("start") val start: OffsetDateTime,
@@ -87,3 +92,9 @@ data class BookedAppointmentResponse(
     @SerializedName("totalPrice") val totalPrice: BigDecimal
 )
 
+data class RescheduleAppointmentRequest(
+    @SerializedName("barberId") val barberId: Long,
+    @SerializedName("serviceId") val serviceId: Long,
+    @SerializedName("startTime") val startTime: String, // Formato UTC: "2025-11-30T14:00:00Z"
+    @SerializedName("tz") val tz: String = "America/Sao_Paulo"
+)

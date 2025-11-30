@@ -7,6 +7,8 @@ import com.pdm.barbershop.data.remote.ApiService
 import com.pdm.barbershop.data.remote.dto.AppointmentDto
 import com.pdm.barbershop.data.remote.dto.ServiceDto
 import com.pdm.barbershop.data.remote.dto.UserDto
+import com.pdm.barbershop.data.remote.dto.WorkingHoursRequest
+import com.pdm.barbershop.domain.model.Appointment
 import com.pdm.barbershop.domain.model.Barber
 import com.pdm.barbershop.domain.model.Service
 import com.pdm.barbershop.util.DateTimeUtils
@@ -25,8 +27,14 @@ class ScheduleRepository @Inject constructor(
 
     suspend fun loadBarbers(): List<Barber> = withContext(Dispatchers.IO) {
         api.getBarbers().map { user ->
+            // user.userId é o ID de usuário.
+            // user.barberId é o ID do barbeiro (se existir).
+            // Para agendamento, precisamos do barberId.
+            // Assumindo que o DTO UserDto tem barberId e o model Barber deve usar esse ID.
+            val idToUse = user.barberId?.toString() ?: user.userId.toString()
+            
             Barber(
-                id = user.userId.toString(),
+                id = idToUse, // Usa o barberId se disponível, senão userId (fallback, mas idealmente seria barberId)
                 name = user.name,
                 rating = 0.0,
                 imageUrl = user.avatarUrl
@@ -87,5 +95,20 @@ class ScheduleRepository @Inject constructor(
             price = (price ?: java.math.BigDecimal.ZERO).toDouble(),
             durationInMinutes = (durationMinutes ?: 30),
             icon = Icons.Default.ContentCut
+        )
+
+    private fun AppointmentDto.toDomain(): Appointment =
+        Appointment(
+            appointmentId = appointmentId?.toInt() ?: 0,
+            barberId = barberId.toInt(),
+            serviceId = serviceId.toInt(),
+            clientId = clientId.toInt(),
+            startTime = startTime.toString(),
+            endTime = endTime?.toString() ?: "",
+            status = status,
+            totalPrice = totalPrice?.toDouble(),
+            clientName = clientName ?: "Unknown",
+            barberName = barberName ?: "Unknown",
+            serviceName = serviceName ?: "Unknown"
         )
 }

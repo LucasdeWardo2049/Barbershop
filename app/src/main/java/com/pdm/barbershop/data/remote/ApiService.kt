@@ -3,6 +3,7 @@ package com.pdm.barbershop.data.remote
 import com.pdm.barbershop.data.remote.dto.*
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
+import retrofit2.Response
 import retrofit2.http.*
 
 interface ApiService {
@@ -14,6 +15,7 @@ interface ApiService {
         @Query("active") active: Boolean? = true
     ): PagedResponse<ServiceDto>
 
+    // API endpoint for user management - will be used in admin features
     @GET("api/v1/users")
     suspend fun getUsers(
         @Query("page") page: Int = 0,
@@ -36,7 +38,21 @@ interface ApiService {
     suspend fun bookAppointment(@Body req: AppointmentRequest): AppointmentDto
 
     @GET("api/v1/appointments/me")
-    suspend fun getMyAppointments(): List<AppointmentDto>
+    suspend fun getMyAppointments(
+        @Query("tz") tz: String? = null
+    ): List<AppointmentDto>
+
+    @PUT("api/v1/appointments/me/{id}")
+    suspend fun rescheduleAppointment(
+        @Path("id") appointmentId: Long,
+        @Body request: RescheduleAppointmentRequest
+    ): AppointmentDto
+
+    @DELETE("api/v1/appointments/me/{id}")
+    suspend fun cancelAppointment(@Path("id") appointmentId: Long): Response<Unit>
+
+    @POST("api/v1/working_hours")
+    suspend fun addWorkingHours(@Body request: WorkingHoursRequest): Response<Unit>
 
     @DELETE("api/v1/appointments/me/{id}")
     suspend fun cancelMyAppointment(@Path("id") appointmentId: Long)
