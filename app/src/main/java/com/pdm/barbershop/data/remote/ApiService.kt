@@ -54,6 +54,15 @@ interface ApiService {
     @POST("api/v1/working_hours")
     suspend fun addWorkingHours(@Body request: WorkingHoursRequest): Response<Unit>
 
+    @DELETE("api/v1/appointments/me/{id}")
+    suspend fun cancelMyAppointment(@Path("id") appointmentId: Long)
+
+    @PUT("api/v1/appointments/me/{id}")
+    suspend fun rescheduleMyAppointment(
+        @Path("id") appointmentId: Long,
+        @Body req: RescheduleRequest
+    ): AppointmentDto
+
     @Multipart
     @POST("api/v1/users/{userId}/avatar")
     suspend fun uploadAvatar(

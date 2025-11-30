@@ -28,7 +28,7 @@ sealed class AppDestination(
     data object Services : AppDestination("services", R.string.nav_services, Icons.Outlined.ContentCut, "Serviços")
     data object Barbers : AppDestination("barbers", R.string.nav_barbers, Icons.Outlined.Group, "Barbeiros")
     data object Schedule : AppDestination("schedule", R.string.nav_schedule, Icons.Outlined.CalendarMonth, "Agenda")
-    data object Appointments : AppDestination("appointments", R.string.nav_appointments, Icons.Outlined.DateRange, "Meus Agendamentos")
+    data object Appointments : AppDestination("appointments", R.string.nav_appointments, Icons.Outlined.DateRange, "Agendamentos")
     data object ComandaHistory : AppDestination("comanda_history", R.string.nav_comanda_history, Icons.Outlined.ReceiptLong, "Histórico de Comandas")
     
     data object Payment : AppDestination("payment", R.string.nav_payment, Icons.Outlined.Payment, "Pagamento")

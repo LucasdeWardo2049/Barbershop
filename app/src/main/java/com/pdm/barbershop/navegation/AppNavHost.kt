@@ -82,20 +82,9 @@ fun AppNavHost(
         composable(AppDestination.Barbers.route) {
             BarbersScreen(onBackClick = { navController.popBackStack() })
         }
-        composable(AppDestination.Schedule.route) {
-            ScheduleScreen(
-                onNavigateToPayment = { navController.navigate(AppDestination.Payment.route) }
-            )
-        }
-        composable(AppDestination.Payment.route) {
-            PaymentScreen(
-                onBackClick = { navController.popBackStack() },
-                onPaymentSuccess = { 
-                    navController.navigate(AppDestination.Home.route) {
-                        popUpTo(AppDestination.Home.route) { inclusive = true }
-                    }
-                }
-            )
+        composable(AppDestination.Schedule.route) { ScheduleScreen() }
+        composable(AppDestination.Appointments.route) {
+            AppointmentsScreen(viewModel = hiltViewModel())
         }
         composable(AppDestination.EditAppointment.route) {
             EditAppointmentScreen(

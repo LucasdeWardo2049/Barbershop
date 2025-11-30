@@ -49,23 +49,11 @@ class ScheduleRepository @Inject constructor(
             slots.map { it.start.toString() }.distinct()
         }
 
-    suspend fun getAppointments(): List<Appointment> = withContext(Dispatchers.IO) {
-        val dtos = api.getMyAppointments()
-        dtos.map { it.toDomain() }
-    }
-
-    suspend fun addWorkingHours(barberId: Long, dayOfWeek: Int, startTime: String, endTime: String) = 
+    suspend fun getAvailability(barberId: Long, serviceId: Long, date: java.time.LocalDate): List<String> =
         withContext(Dispatchers.IO) {
-            val req = WorkingHoursRequest(
-                barberId = barberId,
-                dayOfWeek = dayOfWeek,
-                startTime = startTime,
-                endTime = endTime
-            )
-            val resp = api.addWorkingHours(req)
-            if (!resp.isSuccessful) {
-                throw HttpException(resp)
-            }
+            val dateISO = date.toString() // YYYY-MM-DD
+            val slots = api.getAvailability(barberId, serviceId, dateISO)
+            slots.map { it.start.toString() }.distinct()
         }
 
     suspend fun book(clientId: Long, barberId: Long, serviceId: Long, startTime: String): AppointmentDto =

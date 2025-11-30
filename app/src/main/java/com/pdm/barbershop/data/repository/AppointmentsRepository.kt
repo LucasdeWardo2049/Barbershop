@@ -4,7 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.pdm.barbershop.data.remote.ApiService
 import com.pdm.barbershop.data.remote.dto.AppointmentDto
-import com.pdm.barbershop.data.remote.dto.RescheduleAppointmentRequest
+import com.pdm.barbershop.data.remote.dto.RescheduleRequest
 import com.pdm.barbershop.domain.model.Appointment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,6 +22,25 @@ class AppointmentsRepository @Inject constructor(
         // Mas se o problema persiste, talvez o front deva explicitar.
         // Vou editar o ApiService para aceitar tz opcional e passar aqui.
         api.getMyAppointments(tz = "America/Manaus").map { it.toDomain() }
+    }
+
+    suspend fun cancelAppointment(appointmentId: Long) = withContext(Dispatchers.IO) {
+        api.cancelMyAppointment(appointmentId)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun rescheduleAppointment(
+        appointmentId: Long,
+        barberId: Long,
+        serviceId: Long,
+        startTime: String
+    ): Appointment = withContext(Dispatchers.IO) {
+        val request = RescheduleRequest(
+            barberId = barberId,
+            serviceId = serviceId,
+            startTime = startTime
+        )
+        api.rescheduleMyAppointment(appointmentId, request).toDomain()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
