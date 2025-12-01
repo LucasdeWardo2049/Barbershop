@@ -148,8 +148,16 @@ class ScheduleViewModel @Inject constructor(
                     return@launch
                 }
 
-                // Valida horário passado
-                if (DateTimeUtils.isIsoPast(timeIso)) {
+                // Logs para diagnóstico
+                Log.d("BOOKING", "═══════════════════════════════")
+                Log.d("BOOKING", "📅 Slot selecionado (raw): $timeIso")
+                Log.d("BOOKING", "🌍 Fuso horário: $zone")
+                Log.d("BOOKING", "⏰ Horário atual: ${java.time.Instant.now()}")
+                Log.d("BOOKING", "🔍 isIsoPast? ${DateTimeUtils.isIsoPast(timeIso)}")
+
+                // Valida horário passado (com margem de 2 minutos)
+                if (DateTimeUtils.isIsoPast(timeIso, toleranceSeconds = 0)) {
+                    Log.w("BOOKING", "❌ Horário no passado detectado!")
                     _ui.update { it.copy(
                         errorMessage = "Horário selecionado já passou. Escolha outro.",
                         loading = false
@@ -157,16 +165,19 @@ class ScheduleViewModel @Inject constructor(
                     return@launch
                 }
 
-                // Envia o horário exatamente como recebido (com offset), sem converter para UTC Z.
-                // Isso garante que, se o backend aceitar o offset, ele registrará o horário correto.
-                // Se o backend exigir UTC, ele converterá, mas a intenção de horário local será preservada.
-                Log.d("ScheduleVM", "Booking Time ISO (raw): $timeIso")
+                // Converte para UTC Z para garantir formato aceito pelo backend
+                val utcZ = DateTimeUtils.toUtcZ(timeIso)
+                Log.d("BOOKING", "📤 Enviando para backend: $utcZ")
+                Log.d("BOOKING", "👤 ClientId: $clientId")
+                Log.d("BOOKING", "💈 BarberId: ${barber.id}")
+                Log.d("BOOKING", "✂️ ServiceId: ${svc.id}")
+                Log.d("BOOKING", "═══════════════════════════════")
 
                 repo.book(
                     clientId = clientId,
                     barberId = barber.id.toLong(),
                     serviceId = svc.id.toLong(),
-                    startTime = timeIso
+                    startTime = utcZ // Envia em UTC Z
                 )
                 
                 notificationRepository.addNotification(
@@ -188,14 +199,32 @@ class ScheduleViewModel @Inject constructor(
     fun consumeBookingSuccess() { _ui.update { it.copy(bookingSuccess = false) } }
 
     private fun classifyError(e: Exception): String = when (e) {
+        is IllegalArgumentException -> {
+            // Horário no passado (validação local)
+            "Horário já passou. Por favor, escolha um horário futuro."
+        }
         is UnknownHostException -> "Servidor não encontrado. Verifique a URL."
         is ConnectException -> "Não foi possível conectar ao servidor."
         is SocketTimeoutException -> "Tempo de resposta excedido. Tente novamente."
         is HttpException -> when (e.code()) {
-            401,403 -> "Não autorizado. Faça login novamente."
-            409 -> "Horário indisponível. Escolha outro ou recarregue a lista."
-            else -> "Erro ${e.code()} ao comunicar com o servidor."
+            401, 403 -> "Não autorizado. Faça login novamente."
+            409 -> {
+                Log.w("BOOKING", "❌ Conflito HTTP 409: Horário já reservado")
+                "Horário já reservado por outro cliente. Escolha outro horário."
+            }
+            400 -> {
+                val body = e.response()?.errorBody()?.string()
+                Log.e("BOOKING", "❌ Erro 400: $body")
+                "Formato de horário inválido. Tente novamente."
+            }
+            else -> {
+                Log.e("BOOKING", "❌ Erro HTTP ${e.code()}")
+                "Erro ${e.code()} ao comunicar com o servidor."
+            }
         }
-        else -> e.message ?: "Erro desconhecido"
+        else -> {
+            Log.e("BOOKING", "❌ Erro inesperado: ${e.message}", e)
+            e.message ?: "Erro desconhecido"
+        }
     }
 }

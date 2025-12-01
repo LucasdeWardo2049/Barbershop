@@ -53,11 +53,6 @@ class ScheduleRepository @Inject constructor(
 
     suspend fun book(clientId: Long, barberId: Long, serviceId: Long, startTime: String): AppointmentDto =
         withContext(Dispatchers.IO) {
-            if (DateTimeUtils.isIsoPast(startTime)) {
-                Log.w("Booking", "Tentativa de agendar horário no passado: $startTime")
-                throw IllegalArgumentException("Horário no passado. Selecione um horário futuro.")
-            }
-
             val req = com.pdm.barbershop.data.remote.dto.AppointmentRequest(
                 clientId = clientId,
                 barberId = barberId,
@@ -67,14 +62,16 @@ class ScheduleRepository @Inject constructor(
             )
 
             try {
+                Log.d("ScheduleRepo", "📤 Enviando requisição de agendamento...")
                 val resp = api.bookAppointment(req)
+                Log.d("ScheduleRepo", "✅ Agendamento criado: ID ${resp.appointmentId}")
                 resp
             } catch (e: HttpException) {
                 val raw = e.response()?.errorBody()?.string()
-                Log.e("Booking", "HTTP ${e.code()} response body: $raw", e)
+                Log.e("ScheduleRepo", "❌ HTTP ${e.code()} response: $raw", e)
                 throw e
             } catch (e: Exception) {
-                Log.e("Booking", "Unexpected error: ${e.message}", e)
+                Log.e("ScheduleRepo", "❌ Erro inesperado: ${e.message}", e)
                 throw e
             }
         }

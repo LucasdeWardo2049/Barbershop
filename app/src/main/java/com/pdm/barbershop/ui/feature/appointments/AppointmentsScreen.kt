@@ -379,6 +379,27 @@ fun AppointmentCard(
                 }
             }
             
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Preço Total
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Total: ",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "R$ ${String.format("%.2f", appointment.totalPrice ?: 0.0)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
             // Mostrar botões apenas se não estiver cancelado
             if (!isCancelled) {
                 Spacer(modifier = Modifier.height(20.dp))
