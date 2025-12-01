@@ -1,5 +1,7 @@
 package com.pdm.barbershop.ui.feature.barber
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -32,6 +34,7 @@ import java.time.format.DateTimeFormatter
 
 data class Kpi(val icon: ImageVector, val value: String, val label: String)
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun BarberDashboardScreen(
     viewModel: BarberDashboardViewModel = hiltViewModel(),
@@ -42,11 +45,10 @@ fun BarberDashboardScreen(
     val appointmentCount = uiState.upcomingAppointments.size
     val revenue = uiState.upcomingAppointments.sumOf { it.totalPrice ?: 0.0 }
     
+    // KPIs atualizados: Apenas Receita e Agendamentos
     val kpis = listOf(
         Kpi(Icons.Default.Star, "R$ ${String.format("%.2f", revenue)}", "Receita Prevista"),
-        Kpi(Icons.Default.DateRange, "$appointmentCount", "Agendamentos"),
-        Kpi(Icons.Default.ThumbUp, "4.8/5", "Sua Avaliação"),
-        Kpi(Icons.Default.Info, "80%", "Ocupação Hoje")
+        Kpi(Icons.Default.DateRange, "$appointmentCount", "Agendamentos")
     )
 
     if (uiState.isLoading) {
@@ -76,9 +78,10 @@ fun BarberDashboardScreen(
             }
 
             item {
+                // Grid ajustado para 1 linha (apenas 2 itens)
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
-                    modifier = Modifier.height(240.dp),
+                    modifier = Modifier.height(120.dp), 
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     userScrollEnabled = false
@@ -153,7 +156,7 @@ fun KpiCard(kpi: Kpi) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = kpi.value, 
-                style = MaterialTheme.typography.headlineMedium, 
+                style = MaterialTheme.typography.headlineSmall, 
                 fontWeight = FontWeight.Bold
             )
             Text(

@@ -7,6 +7,7 @@ import com.pdm.barbershop.data.remote.ApiService
 import com.pdm.barbershop.data.remote.dto.AppointmentDto
 import com.pdm.barbershop.data.remote.dto.ServiceDto
 import com.pdm.barbershop.data.remote.dto.UserDto
+import com.pdm.barbershop.data.remote.dto.WorkingHourResponse
 import com.pdm.barbershop.data.remote.dto.WorkingHoursRequest
 import com.pdm.barbershop.domain.model.Appointment
 import com.pdm.barbershop.domain.model.Barber
@@ -88,6 +89,24 @@ class ScheduleRepository @Inject constructor(
                 endTime = endTime
             )
             val resp = api.addWorkingHours(req)
+            if (!resp.isSuccessful) {
+                throw HttpException(resp)
+            }
+        }
+
+    suspend fun searchWorkingHours(barberId: Long, dayOfWeek: Int? = null): List<WorkingHourResponse> =
+        withContext(Dispatchers.IO) {
+            api.searchWorkingHours(barberId, dayOfWeek)
+        }
+
+    suspend fun updateWorkingHours(id: Long, request: WorkingHoursRequest): WorkingHourResponse =
+        withContext(Dispatchers.IO) {
+            api.updateWorkingHours(id, request)
+        }
+
+    suspend fun deleteWorkingHours(id: Long) =
+        withContext(Dispatchers.IO) {
+            val resp = api.deleteWorkingHours(id)
             if (!resp.isSuccessful) {
                 throw HttpException(resp)
             }

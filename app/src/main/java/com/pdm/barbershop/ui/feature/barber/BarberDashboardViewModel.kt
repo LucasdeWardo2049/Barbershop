@@ -1,5 +1,7 @@
 package com.pdm.barbershop.ui.feature.barber
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pdm.barbershop.data.repository.AppointmentsRepository
@@ -10,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.OffsetDateTime
+import java.time.ZoneId
 import javax.inject.Inject
 
 data class BarberDashboardUiState(
@@ -18,6 +22,7 @@ data class BarberDashboardUiState(
     val isLoading: Boolean = false
 )
 
+@RequiresApi(Build.VERSION_CODES.O)
 @HiltViewModel
 class BarberDashboardViewModel @Inject constructor(
     private val userRepository: UserRepository,
@@ -43,12 +48,28 @@ class BarberDashboardViewModel @Inject constructor(
                 val currentUser = userRepository.currentUser.value
                 
                 // 2. Carregar agendamentos do barbeiro
+                // listMyAppointments() retorna agendamentos do barbeiro logado (backend filtra pelo token/contexto)
                 val appointments = appointmentsRepository.listMyAppointments()
+                
+                // Ordena por data mais próxima e filtra apenas futuros ou hoje
+                val now = OffsetDateTime.now(ZoneId.of("America/Manaus"))
+                
+                val sortedAppointments = appointments
+                    .filter { 
+                        try {
+                            // Parse manual do ISO, já que DateTimeUtils.parseIso não existe
+                            val apptTime = OffsetDateTime.parse(it.startTime)
+                            apptTime.isAfter(now)
+                        } catch (e: Exception) {
+                            false
+                        }
+                    }
+                    .sortedBy { it.startTime }
                 
                 _uiState.update { 
                     it.copy(
                         barberName = currentUser?.name ?: "Barbeiro",
-                        upcomingAppointments = appointments,
+                        upcomingAppointments = sortedAppointments,
                         isLoading = false
                     )
                 }

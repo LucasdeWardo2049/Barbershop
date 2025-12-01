@@ -4,6 +4,8 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pdm.barbershop.data.remote.dto.WorkingHourResponse
+import com.pdm.barbershop.data.remote.dto.WorkingHoursRequest
 import com.pdm.barbershop.data.repository.ScheduleRepository
 import com.pdm.barbershop.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,6 +22,7 @@ data class BarberWorkingHoursUiState(
     val selectedDate: LocalDate? = null,
     val startTime: LocalTime = LocalTime.of(9, 0),
     val endTime: LocalTime = LocalTime.of(18, 0),
+    val workingHoursList: List<WorkingHourResponse> = emptyList(),
     val isLoading: Boolean = false,
     val successMessage: String? = null,
     val errorMessage: String? = null
@@ -35,11 +38,29 @@ class BarberWorkingHoursViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(BarberWorkingHoursUiState())
     val uiState = _uiState.asStateFlow()
     
-    // Define o fuso horário de Manaus
     private val zoneId = ZoneId.of("America/Manaus")
 
     fun selectDate(date: LocalDate) {
         _uiState.update { it.copy(selectedDate = date, successMessage = null, errorMessage = null) }
+        loadWorkingHoursForDay(date.dayOfWeek.value)
+    }
+
+    private fun loadWorkingHoursForDay(dayOfWeek: Int) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val user = userRepository.currentUser.value ?: run {
+                    userRepository.fetchUser()
+                    userRepository.currentUser.value
+                }
+                val barberId = user?.barberId ?: throw Exception("Perfil de barbeiro não encontrado.")
+
+                val hours = scheduleRepository.searchWorkingHours(barberId, dayOfWeek)
+                _uiState.update { it.copy(workingHoursList = hours, isLoading = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = "Erro ao carregar horários: ${e.message}") }
+            }
+        }
     }
 
     fun setStartTime(hour: Int, minute: Int) {
@@ -61,40 +82,21 @@ class BarberWorkingHoursViewModel @Inject constructor(
             return
         }
 
-        // Validação simples
         if (state.endTime.isBefore(state.startTime)) {
             _uiState.update { it.copy(errorMessage = "Horário final deve ser após o inicial.") }
-            return
-        }
-
-        // Obtém a data e hora atual no fuso horário correto (Manaus)
-        val nowInZone = LocalTime.now(zoneId)
-        val todayInZone = LocalDate.now(zoneId)
-
-        // Validação de horário passado considerando o fuso horário
-        if (date.isEqual(todayInZone) && state.startTime.isBefore(nowInZone)) {
-            _uiState.update { it.copy(errorMessage = "O horário de início já passou.") }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
             try {
-                // Garante que o usuário esteja carregado
-                var user = userRepository.currentUser.value
-                if (user == null) {
+                val user = userRepository.currentUser.value ?: run {
                     userRepository.fetchUser()
-                    user = userRepository.currentUser.value
+                    userRepository.currentUser.value
                 }
-                
-                // Aqui pegamos o barberId correto vindo do backend (que é retornado no /me)
-                // Se o barberId for nulo, significa que o usuário não tem perfil de barbeiro associado corretamente
-                val barberId = user?.barberId ?: throw Exception("Perfil de barbeiro não encontrado para este usuário.")
+                val barberId = user?.barberId ?: throw Exception("Perfil de barbeiro não encontrado.")
 
-                // Converte para DayOfWeek (1=Monday, 7=Sunday)
                 val dayOfWeek = date.dayOfWeek.value 
-
-                // Formata para HH:mm:ss
                 val startFormatted = String.format("%02d:%02d:00", state.startTime.hour, state.startTime.minute)
                 val endFormatted = String.format("%02d:%02d:00", state.endTime.hour, state.endTime.minute)
 
@@ -108,12 +110,54 @@ class BarberWorkingHoursViewModel @Inject constructor(
                 _uiState.update { 
                     it.copy(
                         isLoading = false, 
-                        successMessage = "Horário adicionado com sucesso para ${date.dayOfWeek.name}!"
+                        successMessage = "Horário adicionado com sucesso!"
                     ) 
                 }
+                loadWorkingHoursForDay(dayOfWeek)
 
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = e.message ?: "Erro ao salvar horário.") }
+            }
+        }
+    }
+
+    fun deleteWorkingHour(workingHourId: Long) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                scheduleRepository.deleteWorkingHours(workingHourId)
+                _uiState.update { it.copy(successMessage = "Horário removido com sucesso!", isLoading = false) }
+                _uiState.value.selectedDate?.let { loadWorkingHoursForDay(it.dayOfWeek.value) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "Erro ao remover: ${e.message}", isLoading = false) }
+            }
+        }
+    }
+
+    fun updateWorkingHour(workingHourId: Long, newStart: LocalTime, newEnd: LocalTime) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val user = userRepository.currentUser.value!!
+                val barberId = user.barberId!!
+                val dayOfWeek = _uiState.value.selectedDate!!.dayOfWeek.value
+
+                val startFormatted = String.format("%02d:%02d:00", newStart.hour, newStart.minute)
+                val endFormatted = String.format("%02d:%02d:00", newEnd.hour, newEnd.minute)
+
+                val request = WorkingHoursRequest(
+                    barberId = barberId,
+                    dayOfWeek = dayOfWeek,
+                    startTime = startFormatted,
+                    endTime = endFormatted
+                )
+
+                scheduleRepository.updateWorkingHours(workingHourId, request)
+                
+                _uiState.update { it.copy(successMessage = "Horário atualizado!", isLoading = false) }
+                loadWorkingHoursForDay(dayOfWeek)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "Erro ao atualizar: ${e.message}", isLoading = false) }
             }
         }
     }

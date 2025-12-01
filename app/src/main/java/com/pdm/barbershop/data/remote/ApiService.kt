@@ -15,7 +15,6 @@ interface ApiService {
         @Query("active") active: Boolean? = true
     ): PagedResponse<ServiceDto>
 
-    // API endpoint for user management - will be used in admin features
     @GET("api/v1/users")
     suspend fun getUsers(
         @Query("page") page: Int = 0,
@@ -31,7 +30,7 @@ interface ApiService {
     suspend fun getAvailability(
         @Path("barberId") barberId: Long,
         @Query("serviceId") serviceId: Long,
-        @Query("date") date: String // YYYY-MM-DD
+        @Query("date") date: String
     ): List<AvailabilitySlotDto>
 
     @POST("api/v1/appointments")
@@ -51,9 +50,27 @@ interface ApiService {
     @DELETE("api/v1/appointments/me/{id}")
     suspend fun cancelAppointment(@Path("id") appointmentId: Long): Response<Unit>
 
+    // Endpoints de Working Hours (Gerenciamento de Horários)
+    
     @POST("api/v1/working_hours")
     suspend fun addWorkingHours(@Body request: WorkingHoursRequest): Response<Unit>
 
+    @GET("api/v1/working_hours/search")
+    suspend fun searchWorkingHours(
+        @Query("barberId") barberId: Long,
+        @Query("dayOfWeek") dayOfWeek: Int? = null
+    ): List<WorkingHourResponse>
+
+    @PUT("api/v1/working_hours/{id}")
+    suspend fun updateWorkingHours(
+        @Path("id") id: Long,
+        @Body request: WorkingHoursRequest
+    ): WorkingHourResponse
+
+    @DELETE("api/v1/working_hours/{id}")
+    suspend fun deleteWorkingHours(@Path("id") id: Long): Response<Unit>
+
+    // Métodos duplicados mantidos por compatibilidade (se necessário) ou para remover depois
     @DELETE("api/v1/appointments/me/{id}")
     suspend fun cancelMyAppointment(@Path("id") appointmentId: Long)
 
