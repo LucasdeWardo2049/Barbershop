@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.pdm.barbershop.data.repository.AppointmentsRepository
 import com.pdm.barbershop.data.repository.ScheduleRepository
 import com.pdm.barbershop.domain.model.Appointment
+import com.pdm.barbershop.domain.repository.NotificationRepository
 import com.pdm.barbershop.util.DateTimeUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,7 +64,8 @@ data class AppointmentsUiState(
 @HiltViewModel
 class AppointmentsViewModel @Inject constructor(
     private val appointmentsRepository: AppointmentsRepository,
-    private val scheduleRepository: ScheduleRepository
+    private val scheduleRepository: ScheduleRepository,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
 
     companion object {
@@ -86,8 +88,12 @@ class AppointmentsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val list = appointmentsRepository.listMyAppointments()
+                // Ordenação Cronológica: Mais antigos primeiro (fluxo do tempo)
+                // Para inverter (mais recentes primeiro), use sortedByDescending
+                val sortedList = list.sortedBy { it.startTime }
+                
                 _uiState.update { it.copy(
-                    appointments = list,
+                    appointments = sortedList,
                     isLoading = false,
                     errorMessage = null
                 ) }
@@ -102,13 +108,20 @@ class AppointmentsViewModel @Inject constructor(
     }
 
     fun cancelAppointment(appointmentId: Int) {
+        if (_uiState.value.isLoading) return // Previne duplo clique
+
         Log.d(TAG, "🗑️ Cancelando agendamento ID: $appointmentId")
         _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
         viewModelScope.launch {
             try {
                 appointmentsRepository.cancelAppointment(appointmentId.toLong())
+                
+                notificationRepository.addNotification(
+                    title = "Agendamento Cancelado",
+                    message = "O agendamento #$appointmentId foi cancelado com sucesso."
+                )
+
                 _uiState.update { it.copy(successMessage = "Agendamento cancelado com sucesso") }
-                // Recarrega a lista após cancelar
                 fetchAppointments()
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Erro ao cancelar: ${e.message}", e)
@@ -163,7 +176,6 @@ class AppointmentsViewModel @Inject constructor(
         Log.d(TAG, "📅 Carregando datas disponíveis...")
         viewModelScope.launch {
             try {
-                // Gerar próximos 30 dias como disponíveis
                 val today = LocalDate.now(zone)
                 val dates = (0..29).map { today.plusDays(it.toLong()) }
                 _uiState.update { it.copy(availableDates = dates) }
@@ -193,7 +205,6 @@ class AppointmentsViewModel @Inject constructor(
                 )
                 Log.d(TAG, "📅 API retornou ${slots.size} horários")
 
-                // Filtrar horários passados
                 val filtered = slots.filter { iso -> !DateTimeUtils.isIsoPast(iso) }
                 
                 _uiState.update { it.copy(availableSlots = filtered, loadingSlots = false) }
@@ -210,6 +221,8 @@ class AppointmentsViewModel @Inject constructor(
     }
 
     fun confirmReschedule() {
+        if (_uiState.value.isLoading) return // Previne duplo clique
+
         val state = _uiState.value
         val appointment = state.rescheduleAppointment ?: return
         val slot = state.selectedSlot ?: return
@@ -228,6 +241,11 @@ class AppointmentsViewModel @Inject constructor(
                     serviceId = appointment.serviceId.toLong(),
                     startTime = slot
                 )
+                
+                notificationRepository.addNotification(
+                    title = "Agendamento Alterado",
+                    message = "O agendamento #${appointment.appointmentId} foi reagendado para ${DateTimeUtils.labelFromIso(slot, zone)}."
+                )
 
                 Log.d(TAG, "✅ Reagendamento bem-sucedido!")
                 _uiState.update {
@@ -238,7 +256,6 @@ class AppointmentsViewModel @Inject constructor(
                     )
                 }
 
-                // Recarrega a lista após reagendar
                 fetchAppointments()
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Erro ao reagendar: ${e.message}", e)

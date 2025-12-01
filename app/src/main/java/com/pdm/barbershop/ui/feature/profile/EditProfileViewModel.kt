@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pdm.barbershop.data.remote.UpdateUserRequest
 import com.pdm.barbershop.domain.repository.AuthRepository
+import com.pdm.barbershop.domain.repository.NotificationRepository
 import com.pdm.barbershop.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -32,7 +33,8 @@ data class EditProfileUiState(
 @HiltViewModel
 class EditProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(EditProfileUiState())
     val uiState = _uiState.asStateFlow()
@@ -91,7 +93,7 @@ class EditProfileViewModel @Inject constructor(
                     name = uiState.value.name.trim(),
                     email = uiState.value.email.trim(),
                     phone = uiState.value.phone.trim(),
-                    role = currentUser.role // Adicionado
+                    role = currentUser.role
                 )
                 Log.d(TAG, "Enviando requisição de atualização para o usuário ${currentUser.userId} com o corpo: $request")
 
@@ -100,7 +102,13 @@ class EditProfileViewModel @Inject constructor(
 
                 // Força a atualização do cache e espera a conclusão
                 val fetchJob: Job = launch { userRepository.fetchUser() }
-                fetchJob.join() // Espera a busca do usuário terminar
+                fetchJob.join() 
+
+                // Adiciona notificação
+                notificationRepository.addNotification(
+                    title = "Perfil Atualizado",
+                    message = "Seus dados pessoais foram alterados com sucesso."
+                )
 
                 Log.d(TAG, "Cache do usuário atualizado. Enviando evento de sucesso.")
                 _eventChannel.send(EditProfileEvent.SaveSuccess)

@@ -24,10 +24,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
+import java.time.OffsetDateTime
 
 data class HomeUiState(
     val userName: String = "",
-    val userAvatar: Any? = null, // Mudado para Any? para suportar Uri ou String/Int
+    val userAvatar: Any? = null,
     val nextAppointment: Appointment? = null,
     val lastServiceForRebooking: Service? = null,
     val isLoading: Boolean = false,
@@ -86,7 +87,6 @@ class HomeViewModel @Inject constructor(
                 _uiState.update { it.copy(userAvatar = tempFile.toUri()) }
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error fetching avatar", e)
-                // Se falhar o download, mantemos null ou poderíamos tentar usar a URL original se acessível
                 _uiState.update { it.copy(userAvatar = null) } 
             }
         }
@@ -108,17 +108,41 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val list = appointmentsRepository.listMyAppointments()
-                val next = list.firstOrNull()
-                val lastService = list.lastOrNull()?.let { appt ->
+                
+                // Ordenar os agendamentos por data (assumindo formato ISO 8601)
+                val sortedList = list.sortedBy { appointment ->
+                    OffsetDateTime.parse(appointment.startTime)
+                }
+
+                // Filtrar apenas agendamentos futuros e NÃO cancelados
+                val now = OffsetDateTime.now()
+                val futureAppointments = sortedList.filter { appointment ->
+                    val isFuture = OffsetDateTime.parse(appointment.startTime).isAfter(now)
+                    val isNotCancelled = !appointment.status.equals("CANCELLED", ignoreCase = true)
+                    isFuture && isNotCancelled
+                }
+
+                val next = futureAppointments.firstOrNull()
+                
+                // Para rebooking, pegamos o último serviço realizado (pode ser do passado)
+                // Se não houver passado, pega o último da lista geral
+                val lastServiceAppointment = list.lastOrNull()
+                
+                val lastService = lastServiceAppointment?.let { appt ->
                     Service(
                         id = appt.serviceId.toString(),
                         name = appt.serviceName,
-                        price = 0.0,
+                        price = 0.0, // Preço pode não estar disponível no objeto Appointment simplificado
                         durationInMinutes = 30,
                         icon = Icons.Filled.ContentCut
                     )
                 }
-                _uiState.update { it.copy(nextAppointment = next, lastServiceForRebooking = lastService, isLoading = false) }
+                
+                _uiState.update { it.copy(
+                    nextAppointment = next, 
+                    lastServiceForRebooking = lastService, 
+                    isLoading = false
+                ) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message, isLoading = false) }
             }
