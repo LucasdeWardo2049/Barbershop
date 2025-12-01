@@ -9,7 +9,7 @@ object DateTimeUtils {
     private val DATE_FMT: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
     private val TIME_FMT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-    // Define Manaus como padrão para todo o app
+    // Define Manaus como padrão para todo o app (UTC-4)
     val DEFAULT_ZONE_ID: ZoneId = ZoneId.of("America/Manaus")
 
     // Converte data + hora local para Instant UTC
@@ -55,9 +55,11 @@ object DateTimeUtils {
     }
 
     // Verifica se um ISO (com offset) está no passado
-    fun isIsoPast(iso: String): Boolean {
+    // toleranceSeconds: margem de tolerância (padrão 120s = 2 minutos) para latência
+    fun isIsoPast(iso: String, toleranceSeconds: Long = 120): Boolean {
         val start = OffsetDateTime.parse(iso).toInstant()
-        return start.isBefore(Instant.now())
+        val now = Instant.now().minusSeconds(toleranceSeconds)
+        return start.isBefore(now)
     }
 
     // Converte um ISO com offset (ex.: 2025-11-13T13:50:00-03:00) para UTC sem milissegundos e com 'Z'
