@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pdm.barbershop.data.repository.AppointmentsRepository
 import com.pdm.barbershop.data.repository.ScheduleRepository
 import com.pdm.barbershop.domain.model.Appointment
 import com.pdm.barbershop.util.DateTimeUtils
@@ -25,7 +26,7 @@ data class BarberScheduleUiState(
 @RequiresApi(Build.VERSION_CODES.O)
 @HiltViewModel
 class BarberScheduleViewModel @Inject constructor(
-    private val scheduleRepository: ScheduleRepository
+    private val appointmentsRepository: AppointmentsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BarberScheduleUiState())
@@ -47,22 +48,21 @@ class BarberScheduleViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val allAppointments = scheduleRepository.getAppointments()
+                val allAppointments = appointmentsRepository.listMyAppointments()
                 
                 // Filtra agendamentos para a data selecionada
-                // Supondo que startTime venha como ISO (ex: 2025-11-30T14:00:00) ou ISO com offset
                 val dateString = date.toString() // YYYY-MM-DD
                 
-                val filteredAppointments = allAppointments.filter { 
+                val filteredAppointments = allAppointments.filter { appointment ->
                     // Verifica se a data do agendamento corresponde à data selecionada (no fuso correto)
                     try {
                         // Usando DateTimeUtils para extrair a data do ISO se necessário
                         // Se o startTime for simples YYYY-MM-DD... funciona com startsWith
                         // Se for UTC, precisamos converter para o fuso local antes de comparar o dia
-                        DateTimeUtils.dateLabelFromIso(it.startTime, zoneId) == 
+                        DateTimeUtils.dateLabelFromIso(appointment.startTime, zoneId) == 
                             String.format("%02d/%02d", date.dayOfMonth, date.monthValue)
                     } catch (e: Exception) {
-                         it.startTime.startsWith(dateString)
+                         appointment.startTime.startsWith(dateString)
                     }
                 }.sortedBy { it.startTime }
 

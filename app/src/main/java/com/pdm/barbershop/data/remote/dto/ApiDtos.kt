@@ -64,11 +64,8 @@ data class AppointmentRequest(
     @SerializedName("status") val status: String = "SCHEDULED"
 )
 
-data class RescheduleRequest(
-    @SerializedName("barberId") val barberId: Long,
-    @SerializedName("serviceId") val serviceId: Long,
-    @SerializedName("startTime") val startTime: String // ISO 8601
-)
+// Removido RescheduleRequest, RescheduleAppointmentRequest e WorkingHoursRequest daqui
+// pois estão em arquivos separados
 
 // Deprecated - keeping for backward compatibility during migration
 @Suppress("unused")
@@ -90,11 +87,4 @@ data class BookedAppointmentResponse(
     @SerializedName("end") val end: OffsetDateTime,
     @SerializedName("status") val status: String,
     @SerializedName("totalPrice") val totalPrice: BigDecimal
-)
-
-data class RescheduleAppointmentRequest(
-    @SerializedName("barberId") val barberId: Long,
-    @SerializedName("serviceId") val serviceId: Long,
-    @SerializedName("startTime") val startTime: String, // Formato UTC: "2025-11-30T14:00:00Z"
-    @SerializedName("tz") val tz: String = "America/Sao_Paulo"
 )

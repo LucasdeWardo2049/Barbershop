@@ -16,16 +16,32 @@ class AppointmentsRepository @Inject constructor(
     // Adicionamos o query param "tz" para garantir que a data venha no fuso correto
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun listMyAppointments(): List<Appointment> = withContext(Dispatchers.IO) {
-        // Como o endpoint getMyAppointments no ApiService não tem o param tz, precisamos adicionar lá.
-        // Vou assumir que você prefere que eu edite o ApiService também, ou apenas use o padrão do backend.
-        // Como o backend disse que o padrão já é America/Manaus, não precisaria mudar se o backend estiver certo.
-        // Mas se o problema persiste, talvez o front deva explicitar.
-        // Vou editar o ApiService para aceitar tz opcional e passar aqui.
         api.getMyAppointments(tz = "America/Manaus").map { it.toDomain() }
     }
 
-    suspend fun cancelAppointment(appointmentId: Long) = withContext(Dispatchers.IO) {
-        api.cancelMyAppointment(appointmentId)
+    suspend fun cancelAppointment(appointmentId: Long): Result<Boolean> = withContext(Dispatchers.IO) {
+        try {
+            // Tenta usar o endpoint que retorna Response<Unit>
+            val response = api.cancelAppointment(appointmentId)
+            if (response.isSuccessful) {
+                Result.success(true)
+            } else {
+                // Se falhar ou se o endpoint não for o correto, tenta o outro endpoint void (legacy)
+                // Mas como precisamos retornar Result, vamos assumir que o novo é o correto.
+                // Se quiser suportar o legado:
+                // api.cancelMyAppointment(appointmentId)
+                // Result.success(true)
+                Result.failure(Exception("Falha ao cancelar: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+             try {
+                // Fallback para o método antigo se o novo falhar (ex: 404 ou exception de rota)
+                api.cancelMyAppointment(appointmentId)
+                Result.success(true)
+            } catch (e2: Exception) {
+                Result.failure(e)
+            }
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -34,13 +50,21 @@ class AppointmentsRepository @Inject constructor(
         barberId: Long,
         serviceId: Long,
         startTime: String
-    ): Appointment = withContext(Dispatchers.IO) {
-        val request = RescheduleRequest(
-            barberId = barberId,
-            serviceId = serviceId,
-            startTime = startTime
-        )
-        api.rescheduleMyAppointment(appointmentId, request).toDomain()
+    ): Result<Appointment> = withContext(Dispatchers.IO) {
+        try {
+            val request = RescheduleRequest(
+                barberId = barberId,
+                serviceId = serviceId,
+                startTime = startTime
+            )
+            // Tentando usar o endpoint unificado. Se houver conflito de endpoints no ApiService, 
+            // escolha um. Aqui estou usando o rescheduleMyAppointment que retorna DTO direto.
+            val dto = api.rescheduleMyAppointment(appointmentId, request)
+            Result.success(dto.toDomain())
+        } catch (e: Exception) {
+             // Fallback ou erro direto
+             Result.failure(e)
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -50,9 +74,6 @@ class AppointmentsRepository @Inject constructor(
             barberId = barberId.toInt(),
             serviceId = serviceId.toInt(),
             clientId = clientId.toInt(),
-            // O backend retorna OffsetDateTime no JSON. O Gson converte para objeto. 
-            // startTime.toString() preserva o offset se o objeto tiver essa info.
-            // Se o backend retornou com offset correto (devido ao param tz), toString() deve ser suficiente.
             startTime = startTime.toString(),
             endTime = endTime?.toString() ?: "",
             status = status,
@@ -61,38 +82,5 @@ class AppointmentsRepository @Inject constructor(
             barberName = barberName ?: "Barbeiro #${barberId}",
             serviceName = serviceName ?: "Serviço #${serviceId}"
         )
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun rescheduleAppointment(
-        appointmentId: Long,
-        barberId: Long,
-        serviceId: Long,
-        startTime: String // Formato UTC ou Offset
-    ): Result<Appointment> = withContext(Dispatchers.IO) {
-        try {
-            val request = RescheduleAppointmentRequest(
-                barberId = barberId,
-                serviceId = serviceId,
-                startTime = startTime
-            )
-            val updated = api.rescheduleAppointment(appointmentId, request)
-            Result.success(updated.toDomain())
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun cancelAppointment(appointmentId: Long): Result<Boolean> = withContext(Dispatchers.IO) {
-        try {
-            val response = api.cancelAppointment(appointmentId)
-            if (response.isSuccessful) {
-                Result.success(true)
-            } else {
-                Result.failure(Exception("Falha ao cancelar: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
     }
 }

@@ -2,7 +2,7 @@ package com.pdm.barbershop.ui.feature.barber
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pdm.barbershop.data.repository.ScheduleRepository
+import com.pdm.barbershop.data.repository.AppointmentsRepository
 import com.pdm.barbershop.domain.model.Appointment
 import com.pdm.barbershop.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +21,7 @@ data class BarberDashboardUiState(
 @HiltViewModel
 class BarberDashboardViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val scheduleRepository: ScheduleRepository
+    private val appointmentsRepository: AppointmentsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BarberDashboardUiState())
@@ -43,13 +43,7 @@ class BarberDashboardViewModel @Inject constructor(
                 val currentUser = userRepository.currentUser.value
                 
                 // 2. Carregar agendamentos do barbeiro
-                // Assumindo que o endpoint de getAppointments retorna agendamentos onde o usuário é cliente OU barbeiro
-                // Precisaríamos filtrar ou o backend já trata. O repository.getAppointments() atual chama /api/appointments
-                val appointments = scheduleRepository.getAppointments()
-                
-                // Filtrar apenas agendamentos futuros se necessário, ou pegar os próximos X
-                // Aqui vamos pegar todos por enquanto e exibir os 3 primeiros na UI ou algo assim
-                // Ordenação pode ser necessária dependendo da API
+                val appointments = appointmentsRepository.listMyAppointments()
                 
                 _uiState.update { 
                     it.copy(

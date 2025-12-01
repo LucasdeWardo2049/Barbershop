@@ -13,31 +13,21 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.pdm.barbershop.domain.model.Appointment
-import com.pdm.barbershop.util.DateTimeUtils
-import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @SuppressLint("NewApi")
 @RequiresApi(Build.VERSION_CODES.O)
@@ -88,7 +78,6 @@ fun AppointmentsScreen(
                 )
             )
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(
@@ -286,14 +275,17 @@ fun AppointmentCard(
     onEditClick: () -> Unit,
     onCancelClick: () -> Unit
 ) {
-    var showCancelDialog by remember { mutableStateOf(false) }
-
-    val offsetDateTime = OffsetDateTime.parse(appointment.startTime)
+    val offsetDateTime = try {
+        OffsetDateTime.parse(appointment.startTime)
+    } catch (e: Exception) {
+        null
+    }
+    
     val dateFormatter = DateTimeFormatter.ofPattern("dd 'de' MMMM")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-    val date = offsetDateTime.format(dateFormatter)
-    val time = offsetDateTime.format(timeFormatter)
+    val date = offsetDateTime?.format(dateFormatter) ?: appointment.startTime
+    val time = offsetDateTime?.format(timeFormatter) ?: ""
 
     val isCancelled = appointment.status.uppercase() in listOf("CANCELLED", "CANCELADO")
 
@@ -442,28 +434,24 @@ fun AppointmentCard(
                     }
                 }
             }
-        )
+        }
     }
 }
 
 @Composable
 fun StatusChip(status: String) {
+    // Definindo cores básicas manualmente
+    val successContainer = Color(0xFFE8F5E9)
+    val successGreen = Color(0xFF2E7D32)
+    val infoContainer = Color(0xFFE3F2FD)
+    val infoBlue = Color(0xFF1565C0)
+    val errorContainer = Color(0xFFFFEBEE)
+    val errorRed = Color(0xFFC62828)
+
     val (containerColor, contentColor, text) = when (status.uppercase()) {
-        "SCHEDULED", "AGENDADO" -> Triple(
-            com.pdm.barbershop.ui.SuccessContainer,
-            com.pdm.barbershop.ui.SuccessGreen,
-            "Agendado"
-        )
-        "COMPLETED", "CONCLUIDO" -> Triple(
-            com.pdm.barbershop.ui.InfoContainer,
-            com.pdm.barbershop.ui.InfoBlue,
-            "Concluído"
-        )
-        "CANCELLED", "CANCELADO" -> Triple(
-            com.pdm.barbershop.ui.ErrorContainer,
-            com.pdm.barbershop.ui.ErrorRed,
-            "Cancelado"
-        )
+        "SCHEDULED", "AGENDADO" -> Triple(successContainer, successGreen, "Agendado")
+        "COMPLETED", "CONCLUIDO" -> Triple(infoContainer, infoBlue, "Concluído")
+        "CANCELLED", "CANCELADO" -> Triple(errorContainer, errorRed, "Cancelado")
         else -> Triple(
             MaterialTheme.colorScheme.surfaceVariant,
             MaterialTheme.colorScheme.onSurfaceVariant,
@@ -588,7 +576,7 @@ fun RescheduleDialog(
                                     text = "Nenhum horário disponível para esta data.",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onErrorContainer,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    textAlign = TextAlign.Center
                                 )
                             }
                         }
