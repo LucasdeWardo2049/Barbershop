@@ -92,15 +92,25 @@ fun AppNavHost(
                 onUpdateSuccess = { navController.popBackStack() }
             )
         }
-        composable(AppDestination.Appointments.route) {
-            AppointmentsScreen(viewModel = hiltViewModel())
-        }
         
         composable(AppDestination.ComandaHistory.route) { ComandaHistoryScreen(onBackClick = { navController.popBackStack() }) }
 
         // Barber Flow
         composable(AppDestination.BarberDashboard.route) { 
-            BarberDashboardScreen()
+            BarberDashboardScreen(
+                onNavigateToSchedule = { date ->
+                    // Passa a data selecionada para o ViewModel da tela de agenda via SavedStateHandle
+                    // Como BarberScheduleScreen usa HiltViewModel, podemos usar o backStackEntry para passar dados
+                    // Mas aqui vamos navegar para a rota e o ViewModel vai pegar o argumento se configurado ou via savedStateHandle
+                    
+                    // Opção A: Navegar e deixar o usuário selecionar (simples)
+                    // navController.navigate(AppDestination.BarberSchedule.route)
+                    
+                    // Opção B: Passar dado via SavedStateHandle para a próxima tela
+                    navController.currentBackStackEntry?.savedStateHandle?.set("date", date.toString())
+                    navController.navigate(AppDestination.BarberSchedule.route)
+                }
+            )
         }
         composable(AppDestination.BarberSchedule.route) { BarberScheduleScreen() }
         composable(AppDestination.BarberReports.route) { BarberReportsScreen() }
